@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 const INITIAL_STATE: UpdateState = {
   status: 'idle',
   version: '',
+  currentVersion: '',
   isRequired: false,
   releaseNotes: '',
   percent: 0,

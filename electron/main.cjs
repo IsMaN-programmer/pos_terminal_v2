@@ -10,6 +10,7 @@ let mainWindow = null
 let updateState = {
   status: 'idle',
   version: '',
+  currentVersion: app.getVersion(),
   isRequired: false,
   releaseNotes: '',
   percent: 0,

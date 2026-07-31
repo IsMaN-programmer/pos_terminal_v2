@@ -1776,21 +1776,21 @@ input[type=number].modal-input { -moz-appearance: textfield; }
 .sidebar-update-btn:hover { background: #f1f5f9; }
 .sidebar-update-btn.has-update { color: #22c55e; }
 .updater-sidebar-icon { position: relative; }
-.updater-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: #22c55e; border: 2px solid #ffffff; }
-.update-spinner-small { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e2e8f0; border-top-color: #3b82f6; animation: spin 0.8s linear infinite; }
+.updater-dot { position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; background: #22c55e; border: 2px solid #ffffff; }
+.update-spinner-small { position: absolute; bottom: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e2e8f0; border-top-color: #3b82f6; animation: spin 0.8s linear infinite; }
 
 .forced-update-overlay { position: fixed; inset: 0; z-index: 100000; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; padding: 20px; }
 
 .updater-modal {
   background: #ffffff; border-radius: 16px; padding: 32px 32px 28px;
   width: 400px; max-width: 92vw; box-shadow: 0 20px 60px rgba(0,0,0,0.25);
-  text-align: center; animation: modalIn 0.2s ease;
+  text-align: center; animation: modalIn 0.2s ease; margin: auto;
 }
 .updater-logo { width: 110px; height: 110px; margin: 0 auto 0; position: relative; }
 .updater-logo .login-logo-bg { border-radius: 28px; }
 .updater-logo .login-logo-ring { border-radius: 34px; }
 .updater-logo .login-logo-ring-2 { border-radius: 42px; }
-.updater-line { height: 1px; background: #e2e8f0; margin: 22px 0 18px; }
+.updater-line { height: 1px; background: #e2e8f0; margin: 22px -32px 18px; }
 .updater-title { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 10px; }
 .updater-desc { font-size: 14px; color: #475569; line-height: 1.5; white-space: pre-line; }
 .updater-actions { display: flex; gap: 12px; margin-top: 24px; }

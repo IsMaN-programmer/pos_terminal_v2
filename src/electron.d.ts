@@ -15,6 +15,7 @@ declare global {
   interface UpdateState {
     status: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
     version: string
+    currentVersion: string
     isRequired: boolean
     releaseNotes: string
     percent: number

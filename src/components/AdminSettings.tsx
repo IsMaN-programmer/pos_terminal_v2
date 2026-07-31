@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { fetchAndStoreCompanyData } from '../utils/companyInfo'
 import { getConnectedPrinters } from '../utils/printService'
+import { useUpdater } from '../updater'
 
 interface OrgData {
   name: string
@@ -36,6 +37,8 @@ export default function AdminSettings({ onLogout, onChangeRole, onDataDeleted }:
   const [paperSize, setPaperSize] = useState(localStorage.getItem(PAPER_KEY) || '58')
   const [language, setLanguage] = useState(localStorage.getItem(LANG_KEY) || 'ru')
   const [printers, setPrinters] = useState<string[]>([])
+  const { state: updaterState } = useUpdater()
+  const appVersion = updaterState.currentVersion || '—'
 
   useEffect(() => {
     ;(async () => {
@@ -189,6 +192,10 @@ export default function AdminSettings({ onLogout, onChangeRole, onDataDeleted }:
           <button onClick={onLogout} style={{ padding: '14px 44px', border: '1px solid #ef4444', borderRadius: 8, background: '#fef2f2', color: '#dc2626', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Выйти</button>
           <button onClick={onChangeRole} style={{ padding: '14px 44px', border: '1px solid #e2e8f0', borderRadius: 8, background: '#fff', color: '#1e293b', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>Сменить роль</button>
           <button onClick={() => { setDeletePassword(''); setDeleteError(''); setDeleteModal(true) }} style={{ padding: '12px 34px', border: '1px solid #ef4444', borderRadius: 8, background: '#fff', color: '#dc2626', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>Удалить данные</button>
+        </div>
+
+        <div style={{ textAlign: 'center', padding: '8px 0 4px', color: '#94a3b8', fontSize: 13 }}>
+          Версия приложения: v{appVersion}
         </div>
       </div>
       {deleteModal && (

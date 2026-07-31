@@ -10,3 +10,4 @@ POS_Terminal/
 release/
 dist-installer/
 *.tsbuildinfo
+*.exe
