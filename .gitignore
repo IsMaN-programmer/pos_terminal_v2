@@ -1,0 +1,12 @@
+node_modules/
+dist/
+frontend/dist/
+backend/server/*.db
+backend/.env
+*.log
+
+POS_Terminal/
+
+release/
+dist-installer/
+*.tsbuildinfo
