@@ -1,7 +1,7 @@
 /**
  * Organization Company Info Helper
- * Fetches real STIR (TIN / ИНН), company name, address, and phone from Cabinet API
- * and persists them in localStorage.
+ * Stores and reads manually-entered STIR (TIN / ИНН), company name, address,
+ * and phone from localStorage. These values are shown on receipts.
  */
 
 export interface CompanyInfo {
@@ -12,54 +12,54 @@ export interface CompanyInfo {
   employee: string;
 }
 
+export const DEFAULT_COMPANY_INFO: CompanyInfo = {
+  name: 'OOO "Soliq Servis"',
+  stir: '',
+  address: 'г. Ташкент, ул. Мукимий, 166',
+  phone: '+998 90 123 45 67',
+  employee: '',
+};
+
 export function getCompanyTin(): string {
   return localStorage.getItem('pos_v2_company_tin') || localStorage.getItem('pos_v2_company_stir') || '';
 }
 
 export function getCompanyName(): string {
-  return localStorage.getItem('pos_v2_company_name') || 'OOO "Soliq Servis"';
+  return localStorage.getItem('pos_v2_company_name') || DEFAULT_COMPANY_INFO.name;
 }
 
 export function getCompanyAddress(): string {
-  return localStorage.getItem('pos_v2_company_address') || 'г. Ташкент, ул. Мукимий, 166';
+  return localStorage.getItem('pos_v2_company_address') || DEFAULT_COMPANY_INFO.address;
 }
 
 export function getCompanyPhone(): string {
-  return localStorage.getItem('pos_v2_company_phone') || '+998 90 123 45 67';
+  return localStorage.getItem('pos_v2_company_phone') || DEFAULT_COMPANY_INFO.phone;
 }
 
+export function getCompanyEmployee(): string {
+  return localStorage.getItem('pos_v2_company_employee') || '';
+}
+
+export function saveCompanyData(data: CompanyInfo): void {
+  localStorage.setItem('pos_v2_company_tin', data.stir.trim());
+  localStorage.setItem('pos_v2_company_stir', data.stir.trim());
+  localStorage.setItem('pos_v2_company_name', data.name.trim());
+  localStorage.setItem('pos_v2_company_address', data.address.trim());
+  localStorage.setItem('pos_v2_company_phone', data.phone.trim());
+  localStorage.setItem('pos_v2_company_employee', data.employee.trim());
+}
+
+/**
+ * Kept for compatibility with receipt components: previously fetched the data
+ * from Cabinet API (returned 401), now it just returns the manually entered
+ * values saved in localStorage.
+ */
 export async function fetchAndStoreCompanyData(): Promise<CompanyInfo | null> {
-  try {
-    const token = localStorage.getItem('pos_v2_cabinet_token') || '';
-    if (!token) return null;
-
-    const res = await fetch('/api/cabinet-proxy/api/company-data', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    const d = data?.data || data || {};
-
-    if (d && (d.tin || d.name)) {
-      const stir = String(d.tin || '').trim();
-      const name = String(d.name || d.correctName || '').trim();
-      const address = String(d.address || '').trim();
-      const phone = String(d.phone || d.agentPhone || '').trim();
-      const employee = String(d.agentFio || '').trim();
-
-      if (stir) {
-        localStorage.setItem('pos_v2_company_tin', stir);
-        localStorage.setItem('pos_v2_company_stir', stir);
-      }
-      if (name) localStorage.setItem('pos_v2_company_name', name);
-      if (address) localStorage.setItem('pos_v2_company_address', address);
-      if (phone) localStorage.setItem('pos_v2_company_phone', phone);
-
-      return { name, stir, address, phone, employee };
-    }
-  } catch (e: any) {
-    console.error('Failed to fetch company data:', e.message);
-  }
-  return null;
+  return {
+    name: getCompanyName(),
+    stir: getCompanyTin(),
+    address: getCompanyAddress(),
+    phone: getCompanyPhone(),
+    employee: getCompanyEmployee(),
+  };
 }

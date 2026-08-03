@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Screen } from '../data/types'
-import { HomeIcon, BookIcon, BuildingIcon, TableIcon, SettingsIcon, FiscalIcon } from './Icons'
+import { HomeIcon, BookIcon, BuildingIcon, TableIcon, SettingsIcon, FiscalIcon, SupportIcon } from './Icons'
 import { UpdateButton } from '../updater'
 
 interface LayoutProps {
@@ -53,6 +53,7 @@ const ADMIN_NAV_ITEMS: { screen: Screen; icon: ReactNode; label: string }[] = [
 
   { screen: 'admin_branches', icon: <BuildingIcon />, label: 'Филиалы' },
   { screen: 'admin_settings', icon: <SettingsIcon />, label: 'Настройки' },
+  { screen: 'admin_support', icon: <SupportIcon />, label: 'Тех поддержка' },
 ]
 
 export default function Layout({ currentScreen, onNavigate, staffName, onLogout: _onLogout, role, children }: LayoutProps) {

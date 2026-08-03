@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { OrderItem } from '../data/types'
 import { fiscalDriveApi } from '../services/fiscalDriveApi'
 import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetchAndStoreCompanyData } from '../utils/companyInfo'
+import { getReceiptLogo } from '../utils/receiptLogo'
 import { formatAvansReceipt, printText } from '../utils/printService'
 import { printReceiptNode } from '../utils/receiptPrint'
 
@@ -17,6 +18,7 @@ interface AvansCheckModalProps {
   orderNum: number
   staffName: string
   userRole: string
+  shiftNumber?: string
   onPrint: () => void
   onBack: () => void
 }
@@ -25,7 +27,7 @@ const ROLE_LABELS: Record<string, string> = { waiter: 'Официант', cashie
 
 export default function AvansCheckModal({
   orderItems, tableLabel, guestCount, orderNum, staffName, userRole,
-  onPrint, onBack,
+  shiftNumber = '001', onPrint, onBack,
 }: AvansCheckModalProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>((localStorage.getItem(PAPER_KEY) as PaperSize) || '58')
   const [fmTerminalId, setFmTerminalId] = useState('')
@@ -84,7 +86,7 @@ export default function AvansCheckModal({
 
         <div className={`ac-receipt paper-${paperSize}`} ref={receiptRef}>
           <div className="ac-logo">
-            <img src="/unnamed.png" alt="Logo" className="ac-logo-img" />
+            <img src={getReceiptLogo()} alt="Logo" className="ac-logo-img" />
           </div>
           <div className="ac-company">{orgName}</div>
           <div className="ac-address">{orgAddress}</div>
@@ -100,6 +102,7 @@ export default function AvansCheckModal({
             <div className="ac-meta-row"><span className="ac-label">Стол</span><span className="ac-value">{tableLabel}</span></div>
             <div className="ac-meta-row"><span className="ac-label">Гости</span><span className="ac-value">{guestCount}</span></div>
             <div className="ac-meta-row"><span className="ac-label">{ROLE_LABELS[userRole] || userRole}</span><span className="ac-value">{staffName}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">Смена</span><span className="ac-value">{shiftNumber}</span></div>
           </div>
 
           <div className="ac-divider solid" />
@@ -129,7 +132,6 @@ export default function AvansCheckModal({
 
           <div className="ac-fiscal">
             <div className="ac-fiscal-row"><span>Терминал ID:</span><span>{fmTerminalId || 'TERM-001'}</span></div>
-            <div className="ac-fiscal-row"><span>Смена:</span><span>002</span></div>
           </div>
 
           <div className="ac-footer">Спасибо! Ждём вас снова.</div>
@@ -162,7 +164,7 @@ export default function AvansCheckModal({
                       name: i.menuItem.name, quantity: i.quantity,
                       unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik || '',
                     })),
-                    total, vat, fmTerminalId,
+                    total, vat, fmTerminalId, shiftNumber,
                   }, paperSize)
                   await printText(printer, text)
                   printed = true

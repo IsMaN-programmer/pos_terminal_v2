@@ -38,12 +38,51 @@ export async function printText(printerName: string, content: string): Promise<v
   }
 }
 
+export function formatKitchenReceipt(data: {
+  kitchenName: string
+  tableLabel: string
+  guestCount: number
+  dateStr: string
+  timeStr: string
+  items: Array<{ name: string; quantity: number; comment?: string }>
+  orderComment?: string
+  orderTags?: string[]
+  orderModifiers?: string[]
+}, paperSize: string): string {
+  const W = width(paperSize)
+  const r: string[] = []
+  r.push(sep('=', W))
+  r.push(center(data.kitchenName, W))
+  r.push(sep('=', W))
+  r.push(lr('Стол:', data.tableLabel, W))
+  r.push(lr('Гости:', String(data.guestCount), W))
+  r.push(lr('Время:', data.dateStr + ' ' + data.timeStr, W))
+  r.push(sep('-', W))
+  const note = [...(data.orderTags || []), ...(data.orderComment ? [data.orderComment] : [])].join(' · ')
+  if (note) r.push(note.length > W ? note.slice(0, W - 1) + '…' : note)
+  if (data.orderModifiers && data.orderModifiers.length > 0) {
+    const mods = 'Модификаторы: ' + data.orderModifiers.join(', ')
+    r.push(mods.length > W ? mods.slice(0, W - 1) + '…' : mods)
+  }
+  for (const item of data.items) {
+    const line = item.name + '  x' + item.quantity
+    r.push(line.length > W ? line.slice(0, W - 1) + '…' : line)
+    if (item.comment) r.push('> ' + item.comment.slice(0, W - 3))
+  }
+  r.push(sep('-', W))
+  r.push(center('Заказ отправляется', W))
+  r.push(center('на кухню', W))
+  r.push(sep('=', W))
+  r.push('', '')
+  return r.join('\r\n')
+}
+
 export function formatAvansReceipt(data: {
   orgName: string; orgAddress: string; orgPhone: string; orgStir: string
   dateStr: string; timeStr: string; orderNum: number
   tableLabel: string; guestCount: number; staffName: string; roleLabel: string
   items: Array<{ name: string; quantity: number; unitPrice: number; total: number; mxik: string }>
-  total: number; vat: number; fmTerminalId: string
+  total: number; vat: number; fmTerminalId: string; shiftNumber: string
 }, paperSize: string): string {
   const W = width(paperSize)
   const r: string[] = []
@@ -57,6 +96,7 @@ export function formatAvansReceipt(data: {
   r.push(lr('Заказ: #' + data.orderNum, '', W))
   r.push(lr('Стол: ' + data.tableLabel, 'Гости: ' + data.guestCount, W))
   r.push(lr(data.roleLabel + ': ' + data.staffName, '', W))
+  r.push(lr('Смена:', data.shiftNumber, W))
   r.push(sep('-', W))
 
   for (const item of data.items) {
@@ -70,7 +110,6 @@ export function formatAvansReceipt(data: {
   r.push(lr('QQS 12%:', data.vat.toLocaleString(), W))
   r.push(sep('-', W))
   r.push(lr('Терминал ID:', data.fmTerminalId || 'TERM-001', W))
-  r.push(lr('Смена:', '002', W))
   r.push(sep('=', W))
   r.push(center('Спасибо! Ждём вас снова.', W))
   r.push(sep('=', W))
@@ -86,7 +125,7 @@ export function formatFiscalReceipt(data: {
   totalSum: number; serviceAmount: number; servicePercent: number
   discountValue: number; qqsAmount: number; итого: number
   selectedMethod: string; splitAmounts?: { cash: number; card: number; click: number } | null
-  fmTerminalId: string; fiscalSign?: string; qrCodeUrl?: string
+  fmTerminalId: string; fiscalSign?: string; qrCodeUrl?: string; shiftNumber: string
 }, paperSize: string): string {
   const W = width(paperSize)
   const r: string[] = []
@@ -100,6 +139,7 @@ export function formatFiscalReceipt(data: {
   r.push(lr('Заказ: #' + data.orderNum, '', W))
   r.push(lr('Стол: ' + data.tableLabel, 'Гости: ' + data.guestCount, W))
   r.push(lr(data.roleLabel + ': ' + data.staffName, '', W))
+  r.push(lr('Смена:', data.shiftNumber, W))
   r.push(sep('-', W))
 
   for (const item of data.items) {
@@ -131,7 +171,6 @@ export function formatFiscalReceipt(data: {
   r.push(sep('-', W))
   r.push(lr('Терминал ID:', data.fmTerminalId || 'TERM-001', W))
   if (data.fiscalSign) r.push(lr('Фиск.признак:', data.fiscalSign, W))
-  r.push(lr('Смена:', '002', W))
   r.push(sep('=', W))
   r.push(center('Спасибо! Ждём вас снова.', W))
   r.push(sep('=', W))

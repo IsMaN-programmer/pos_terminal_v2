@@ -3,9 +3,11 @@ import { useState, useEffect, useRef } from 'react'
 interface PrintLoadingModalProps {
   task: () => Promise<void>
   onComplete: () => void
+  loadingLabel?: string
+  doneLabel?: string
 }
 
-export default function PrintLoadingModal({ task, onComplete }: PrintLoadingModalProps) {
+export default function PrintLoadingModal({ task, onComplete, loadingLabel, doneLabel }: PrintLoadingModalProps) {
   const [state, setState] = useState<'loading' | 'done'>('loading')
   const startedRef = useRef(false)
 
@@ -36,7 +38,7 @@ export default function PrintLoadingModal({ task, onComplete }: PrintLoadingModa
           </div>
         )}
         <div className="print-loading-label">
-          {state === 'loading' ? 'Создание чека...' : 'Чек готов'}
+          {state === 'loading' ? (loadingLabel || 'Создание чека...') : (doneLabel || 'Чек готов')}
         </div>
       </div>
     </div>

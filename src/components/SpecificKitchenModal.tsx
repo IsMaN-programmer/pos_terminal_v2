@@ -11,7 +11,8 @@ function getPhoto(name: string): string | undefined {
 }
 
 const PRINTERS_KEY = 'pos_v2_printer_name'
-const PAPER_KEY = 'pos_v2_paper_size'
+const KITCHEN_PRINTERS_KEY = 'pos_v2_kitchen_printer_name'
+const KITCHEN_PAPER_KEY = 'pos_v2_kitchen_paper_size'
 
 type Step = 'select' | 'printer'
 
@@ -27,11 +28,19 @@ export default function SpecificKitchenModal({
 }: SpecificKitchenModalProps) {
   const [step, setStep] = useState<Step>('select')
   const [selected, setSelected] = useState<Set<number>>(new Set(items.map(i => i.id)))
-  const [printer, setPrinter] = useState<string>(localStorage.getItem(PRINTERS_KEY) || '')
-  const [paperSize, setPaperSize] = useState<string>(localStorage.getItem(PAPER_KEY) || '58')
-  const [printers, setPrinters] = useState<string[]>([])
+  const [printer, setPrinter] = useState<string>(localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY) || '')
+  const [paperSize, setPaperSize] = useState<string>(localStorage.getItem(KITCHEN_PAPER_KEY) || '58')
+  const [printers, setPrinters] = useState<string[]>(() => {
+    const saved = localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY)
+    return saved ? [saved] : []
+  })
 
-  useEffect(() => { getConnectedPrinters().then(setPrinters) }, [])
+  useEffect(() => {
+    getConnectedPrinters().then(list => {
+      const saved = localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY)
+      setPrinters(saved && !list.includes(saved) ? [saved, ...list] : list)
+    })
+  }, [])
 
   useEffect(() => {
     setSelected(new Set(items.map(i => i.id)))

@@ -1,4 +1,5 @@
 import { printReceiptNode } from './receiptPrint'
+import { getReceiptLogo } from './receiptLogo'
 
 export type PaperSize = '58' | '80'
 
@@ -10,7 +11,7 @@ interface BaseReceiptData {
   orgName: string; orgAddress: string; orgPhone: string; orgStir: string
   dateStr: string; timeStr: string; orderNum: number
   tableLabel: string; guestCount: number; staffName: string; roleLabel: string
-  items: ItemData[]; fmTerminalId: string
+  items: ItemData[]; fmTerminalId: string; shiftNumber: string
 }
 
 interface AvansReceiptData extends BaseReceiptData {
@@ -21,7 +22,7 @@ interface FiscalReceiptData extends BaseReceiptData {
   totalSum: number; serviceAmount: number; servicePercent: number
   discountValue: number; qqsAmount: number; итого: number
   selectedMethod: string; splitAmounts?: { cash: number; card: number; click: number } | null
-  fiscalSign?: string; qrCodeUrl?: string
+  fiscalSign?: string; qrCodeUrl?: string; licenseNumber?: string
 }
 
 function escHtml(s: string | number): string {
@@ -44,7 +45,7 @@ export function buildAvansReceiptHtml(data: AvansReceiptData): string {
 
   return `
     <div class="ac-logo">
-      <img src="/unnamed.png" alt="Logo" class="ac-logo-img" />
+      <img src="${getReceiptLogo()}" alt="Logo" class="ac-logo-img" />
     </div>
     <div class="ac-company">${escHtml(data.orgName)}</div>
     <div class="ac-address">${escHtml(data.orgAddress)}</div>
@@ -58,6 +59,7 @@ export function buildAvansReceiptHtml(data: AvansReceiptData): string {
       <div class="ac-meta-row"><span class="ac-label">Стол</span><span class="ac-value">${escHtml(data.tableLabel)}</span></div>
       <div class="ac-meta-row"><span class="ac-label">Гости</span><span class="ac-value">${data.guestCount}</span></div>
       <div class="ac-meta-row"><span class="ac-label">${escHtml(data.roleLabel)}</span><span class="ac-value">${escHtml(data.staffName)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">Смена</span><span class="ac-value">${escHtml(data.shiftNumber)}</span></div>
     </div>
     <div class="ac-divider solid"></div>
     <div class="ac-items">${rows}</div>
@@ -70,7 +72,6 @@ export function buildAvansReceiptHtml(data: AvansReceiptData): string {
     <div class="ac-divider dashed"></div>
     <div class="ac-fiscal">
       <div class="ac-fiscal-row"><span>Терминал ID:</span><span>${escHtml(data.fmTerminalId || 'TERM-001')}</span></div>
-      <div class="ac-fiscal-row"><span>Смена:</span><span>002</span></div>
     </div>
     <div class="ac-footer">Спасибо! Ждём вас снова.</div>
   `
@@ -108,7 +109,7 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
 
   return `
     <div class="ac-logo">
-      <img src="/unnamed.png" alt="Logo" class="ac-logo-img" />
+      <img src="${getReceiptLogo()}" alt="Logo" class="ac-logo-img" />
     </div>
     <div class="ac-company">${escHtml(data.orgName)}</div>
     <div class="ac-address">${escHtml(data.orgAddress)}</div>
@@ -122,6 +123,7 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
       <div class="ac-meta-row"><span class="ac-label">Стол</span><span class="ac-value">${escHtml(data.tableLabel)}</span></div>
       <div class="ac-meta-row"><span class="ac-label">Гости</span><span class="ac-value">${data.guestCount}</span></div>
       <div class="ac-meta-row"><span class="ac-label">${escHtml(data.roleLabel)}</span><span class="ac-value">${escHtml(data.staffName)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">Смена</span><span class="ac-value">${escHtml(data.shiftNumber)}</span></div>
     </div>
     <div class="ac-divider solid"></div>
     <div class="ac-items">${rows}</div>
@@ -160,9 +162,60 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
     <div class="ac-fiscal">
       <div class="ac-fiscal-row"><span>Терминал ID:</span><span>${escHtml(data.fmTerminalId || 'TERM-001')}</span></div>
       <div class="ac-fiscal-row"><span>Фискальный признак:</span><span>${escHtml(data.fiscalSign || '—')}</span></div>
-      <div class="ac-fiscal-row"><span>Смена:</span><span>002</span></div>
+      ${data.licenseNumber ? `<div class="ac-fiscal-row"><span>Номер лицензии:</span><span>${escHtml(data.licenseNumber)}</span></div>` : ''}
     </div>
     <div class="ac-footer">Спасибо! Ждём вас снова.</div>
+  `
+}
+
+export interface KitchenReceiptItem {
+  name: string
+  quantity: number
+  comment?: string
+}
+
+export interface KitchenReceiptData {
+  kitchenName: string
+  tableLabel: string
+  guestCount: number
+  dateStr: string
+  timeStr: string
+  items: KitchenReceiptItem[]
+  orderComment?: string
+  orderTags?: string[]
+  orderModifiers?: string[]
+}
+
+export function buildKitchenReceiptHtml(data: KitchenReceiptData): string {
+  const noteParts = [...(data.orderTags || []), ...(data.orderComment ? [data.orderComment] : [])]
+  const noteHtml = noteParts.length > 0
+    ? `<div class="kc-note">${escHtml(noteParts.join(' · '))}</div>`
+    : ''
+  const modsHtml = data.orderModifiers && data.orderModifiers.length > 0
+    ? `<div class="kc-mods">Модификаторы: ${escHtml(data.orderModifiers.join(', '))}</div>`
+    : ''
+  const itemsHtml = data.items.map(item => `
+    <div class="kc-item">
+      <span class="kc-item-name">${escHtml(item.name)}</span>
+      <span class="kc-item-qty">× ${item.quantity}</span>
+    </div>
+    ${item.comment ? `<div class="kc-item-comment">→ ${escHtml(item.comment)}</div>` : ''}
+  `).join('')
+
+  return `
+    <div class="kc-receipt">
+      <div class="kc-head">${escHtml(data.kitchenName)}</div>
+      <div class="kc-divider"></div>
+      <div class="kc-meta-row"><span>Стол</span><span>${escHtml(data.tableLabel)}</span></div>
+      <div class="kc-meta-row"><span>Гости</span><span>${data.guestCount}</span></div>
+      <div class="kc-meta-row"><span>Время</span><span>${escHtml(data.dateStr)} ${escHtml(data.timeStr)}</span></div>
+      <div class="kc-divider"></div>
+      ${noteHtml}
+      ${modsHtml}
+      <div class="kc-items">${itemsHtml}</div>
+      <div class="kc-divider"></div>
+      <div class="kc-foot">Заказ отправляется на кухню</div>
+    </div>
   `
 }
 

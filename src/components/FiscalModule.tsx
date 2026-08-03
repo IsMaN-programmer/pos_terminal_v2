@@ -67,6 +67,50 @@ function saveQueue(q: UnsentItem[]) {
   localStorage.setItem(QUEUE_KEY, JSON.stringify(q))
 }
 
+function fdShiftOpenTime(t: string): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const d = new Date(t.replace(' ', 'T'))
+  d.setSeconds(d.getSeconds() - 5)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+function fmtLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+async function fdSafeTimeFromFm(factoryId: string, t?: string): Promise<string> {
+  const refs: number[] = []
+  const nowRef = new Date()
+  nowRef.setMinutes(nowRef.getMinutes() + 5)
+  refs.push(nowRef.getTime())
+  if (t) {
+    const p = new Date(t.replace(' ', 'T'))
+    if (!isNaN(p.getTime())) refs.push(p.getTime())
+  }
+  try {
+    const info = await fiscalDriveApi.getFiscalMemoryInfo(factoryId)
+    const i = info?.data || info || {}
+    const lastOp = i.LastOperationTime || i.lastOperationTime || ''
+    if (lastOp) {
+      const p = new Date(lastOp.replace(' ', 'T'))
+      if (!isNaN(p.getTime())) refs.push(p.getTime())
+    }
+  } catch {}
+  try {
+    const z = await fiscalDriveApi.getZReportInfo(factoryId, 0)
+    const zd = z?.data && typeof z.data === 'object' ? z.data : z
+    const openT = zd.OpenTime || zd.openTime || zd.opentime || zd.LastOpenTime || zd.lastOpenTime || zd.lastopentime || ''
+    if (openT) {
+      const p = new Date(openT.replace(' ', 'T'))
+      if (!isNaN(p.getTime())) refs.push(p.getTime())
+    }
+  } catch {}
+  const base = new Date(Math.max(...refs))
+  base.setSeconds(base.getSeconds() + 30)
+  return fmtLocal(base)
+}
+
 function loadShiftOpen(): boolean {
   try { return localStorage.getItem(SHIFT_OPEN_KEY) === 'true' } catch { return false }
 }
@@ -174,24 +218,19 @@ export default function FiscalModule() {
 
 
 
-  const fmNow = useCallback(() => {
-    const d = new Date(Date.now() + 300000)
-    return d.toISOString().replace('T', ' ').slice(0, 19)
-  }, [])
-
   const openShift = useCallback(async () => {
     if (!factoryId) { showToast('Фискальный модуль не найден'); return }
     setLoading(true)
     setError('')
     try {
-      await fiscalDriveApi.openZReport(factoryId, fmNow())
+      await fiscalDriveApi.openZReport(factoryId, await fdSafeTimeFromFm(factoryId))
       showToast('Смена открыта')
       await fetchShiftInfo(factoryId)
     } catch (e: any) {
       setError(`Не удалось открыть смену: ${e.message || 'ошибка'}`)
     }
     setLoading(false)
-  }, [factoryId, fetchShiftInfo, showToast, fmNow])
+  }, [factoryId, fetchShiftInfo, showToast])
 
   const closeShift = useCallback(async () => {
     if (!factoryId) { showToast('Фискальный модуль не найден'); return }
@@ -206,7 +245,7 @@ export default function FiscalModule() {
     setLoading(true)
     setError('')
     try {
-      await fiscalDriveApi.closeZReport(factoryId, fmNow())
+      await fiscalDriveApi.closeZReport(factoryId, await fdSafeTimeFromFm(factoryId))
       showToast('Смена закрыта')
       doSetShiftOpen(false)
       doSetShiftInfo(null)
@@ -214,7 +253,7 @@ export default function FiscalModule() {
       setError(`Не удалось закрыть смену: ${e.message || 'ошибка'}`)
     }
     setLoading(false)
-  }, [factoryId, unsentItems, shiftOpen, shiftInfo, showToast, doSetShiftInfo, doSetShiftOpen, fmNow])
+  }, [factoryId, unsentItems, shiftOpen, shiftInfo, showToast, doSetShiftInfo, doSetShiftOpen])
 
   const sendUnsentReceipts = useCallback(async () => {
     if (!factoryId) { showToast('Фискальный модуль не найден'); setLoading(false); return }
@@ -225,17 +264,31 @@ export default function FiscalModule() {
     // 1. Process local pending queue
     for (const item of pending) {
       try {
-        const txData = await fiscalDriveApi.getReceiptTXID(factoryId, item.receipt)
-        const txId = txData?.data || txData?.txId || txData?.TXID || ''
-        if (!txId) throw new Error('No TXID')
-        await fiscalDriveApi.registerReceiptTXID(factoryId, parseInt(String(txId), 10))
+        const receipt: any = { Time: await fdSafeTimeFromFm(factoryId, item.receipt?.Time) }
+        for (const [k, v] of Object.entries(item.receipt || {})) {
+          if (!k.startsWith('_') && k !== 'Time') receipt[k] = v
+        }
+        const txData = await fiscalDriveApi.getReceiptTXID(factoryId, receipt)
+        const txRaw = txData && typeof txData === 'object'
+          ? (txData?.data ?? txData?.txId ?? txData?.TXID ?? JSON.stringify(txData))
+          : txData
+        const txIdStr = String(txRaw ?? '').trim()
+        const txIdNum = parseInt(txIdStr, 10)
+        if (!txIdStr || isNaN(txIdNum)) throw new Error('No TXID')
+        try {
+          await fiscalDriveApi.registerReceiptTXID(factoryId, txIdNum)
+        } catch {
+          await fiscalDriveApi.openZReport(factoryId, fdShiftOpenTime(receipt.Time))
+          await fiscalDriveApi.registerReceiptTXID(factoryId, txIdNum)
+        }
         ok++
         pending = pending.filter(i => i.id !== item.id)
         setUnsentItems(pending)
         saveQueue(pending)
-      } catch {
+      } catch (e: any) {
         fail++
-        pending = pending.map(i => i.id === item.id ? { ...i, status: 'failed' as const, attempts: i.attempts + 1, lastError: 'Ошибка' } : i)
+        const msg = (e?.message || 'Ошибка').slice(0, 200)
+        pending = pending.map(i => i.id === item.id ? { ...i, status: 'failed' as const, attempts: i.attempts + 1, lastError: msg } : i)
         setUnsentItems(pending)
         saveQueue(pending)
       }
@@ -270,7 +323,10 @@ export default function FiscalModule() {
       showToast(`Ожидают отправки в ОФД: ${remaining} чеков`)
     }
 
-    if (fail > 0) showToast(`Не удалось зарегистрировать ${fail} чеков в ФМ`)
+    if (fail > 0) {
+      const firstErr = unsentItems.find(i => i.status === 'failed' || i.status === 'pending')?.lastError
+      showToast(`Не удалось зарегистрировать ${fail} чеков в ФМ${firstErr ? `: ${firstErr}` : ''}`)
+    }
     setLoading(false)
   }, [unsentItems, factoryId, showToast, fetchFmInfo])
 
@@ -294,6 +350,9 @@ export default function FiscalModule() {
 
   const today = new Date().toLocaleDateString('ru-RU')
   const formatSum = (v: number) => (v / 100).toLocaleString('ru-RU', { minimumFractionDigits: 2 })
+
+  const localUnsentCount = unsentItems.filter(i => i.status === 'pending' || i.status === 'failed').length
+  const badgeCount = pendingOfdCount + localUnsentCount
 
 
 
@@ -335,12 +394,12 @@ export default function FiscalModule() {
       </div>
 
       <div className="fm-main-buttons">
-        <button className={`fm-btn fm-btn-unsent${pendingOfdCount > 0 ? ' has-items' : ''}`} onClick={sendUnsentReceipts} disabled={loading}>
+        <button className={`fm-btn fm-btn-unsent${badgeCount > 0 ? ' has-items' : ''}`} onClick={sendUnsentReceipts} disabled={loading}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
           Неотправленные чеки
-          <span className={`fm-badge${pendingOfdCount === 0 ? ' fm-badge-zero' : ''}`}>{pendingOfdCount}</span>
+          <span className={`fm-badge${badgeCount === 0 ? ' fm-badge-zero' : ''}`}>{badgeCount}</span>
         </button>
         <button className="fm-btn fm-btn-open" onClick={openShift} disabled={loading || shiftOpen}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

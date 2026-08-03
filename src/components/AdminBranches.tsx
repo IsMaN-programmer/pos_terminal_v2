@@ -18,7 +18,7 @@ export default function AdminBranches() {
   const [branches, setBranches] = useState<Branch[]>(loadBranches)
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState<{ branch?: Branch } | null>(null)
-  const [form, setForm] = useState({ name: '', address: '', phone: '' })
+  const [form, setForm] = useState({ name: '', address: '', phone: '', terminalId: '', licenseNumber: '' })
 
   useEffect(() => { saveBranches(branches) }, [branches])
 
@@ -27,12 +27,12 @@ export default function AdminBranches() {
     : branches
 
   function openAdd() {
-    setForm({ name: '', address: '', phone: '' })
+    setForm({ name: '', address: '', phone: '', terminalId: '', licenseNumber: '' })
     setModal({})
   }
 
   function openEdit(b: Branch) {
-    setForm({ name: b.name, address: b.address, phone: b.phone })
+    setForm({ name: b.name, address: b.address, phone: b.phone, terminalId: b.terminalId || '', licenseNumber: b.licenseNumber || '' })
     setModal({ branch: b })
   }
 
@@ -79,6 +79,8 @@ export default function AdminBranches() {
               <th>Название</th>
               <th>Адрес</th>
               <th>Телефон</th>
+              <th>Терминал ID</th>
+              <th>Номер лицензии</th>
               <th>Настройки</th>
             </tr>
           </thead>
@@ -88,6 +90,8 @@ export default function AdminBranches() {
                 <td className="ab-table-name">{b.name}</td>
                 <td className="ab-table-addr">{b.address}</td>
                 <td className="ab-table-phone">{b.phone}</td>
+                <td>{b.terminalId || '—'}</td>
+                <td>{b.licenseNumber || '—'}</td>
                 <td>
                   <div className="ab-table-actions">
                     <button className="ab-action-btn" title="Изменить" onClick={() => openEdit(b)}>
@@ -122,6 +126,10 @@ export default function AdminBranches() {
               <input className="modal-input" value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} placeholder="Введите адрес" />
               <label className="ab-form-label">Телефон</label>
               <input className="modal-input" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="Введите телефон" />
+              <label className="ab-form-label">Терминал ID</label>
+              <input className="modal-input" value={form.terminalId} onChange={e => setForm(f => ({ ...f, terminalId: e.target.value }))} placeholder="Введите терминал ID" />
+              <label className="ab-form-label">Номер лицензии</label>
+              <input className="modal-input" value={form.licenseNumber} onChange={e => setForm(f => ({ ...f, licenseNumber: e.target.value }))} placeholder="Введите номер лицензии" />
             </div>
             <div className="modal-actions">
               <button className="modal-btn cancel" onClick={() => setModal(null)}>Отмена</button>

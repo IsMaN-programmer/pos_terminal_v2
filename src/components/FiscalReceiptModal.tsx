@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import QRCode from 'qrcode'
 import type { OrderItem } from '../data/types'
 import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetchAndStoreCompanyData } from '../utils/companyInfo'
+import { getReceiptLogo } from '../utils/receiptLogo'
 import { formatFiscalReceipt, printText } from '../utils/printService'
 import { printReceiptNode } from '../utils/receiptPrint'
 
@@ -28,6 +29,7 @@ interface FiscalReceiptModalProps {
   fmTerminalId: string
   fiscalSign?: string
   qrCodeUrl?: string
+  shiftNumber?: string
   onPrint: () => void
   onBack: () => void
 }
@@ -45,7 +47,7 @@ const methodLabel: Record<string, string> = {
 export default function FiscalReceiptModal({
   orderItems, tableLabel, guestCount, orderNum, staffName, userRole,
   servicePercent, serviceAmount, discountValue, qqsAmount, итого, totalSum, selectedMethod, splitAmounts,
-  fmTerminalId, fiscalSign, qrCodeUrl,
+  fmTerminalId, fiscalSign, qrCodeUrl, shiftNumber = '001',
   onPrint, onBack,
 }: FiscalReceiptModalProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>((localStorage.getItem(PAPER_KEY) as PaperSize) || '58')
@@ -99,7 +101,7 @@ export default function FiscalReceiptModal({
 
         <div className={`ac-receipt paper-${paperSize}`} ref={receiptRef}>
           <div className="ac-logo">
-            <img src="/unnamed.png" alt="Logo" className="ac-logo-img" />
+            <img src={getReceiptLogo()} alt="Logo" className="ac-logo-img" />
           </div>
           <div className="ac-company">{orgName}</div>
           <div className="ac-address">{orgAddress}</div>
@@ -115,6 +117,7 @@ export default function FiscalReceiptModal({
             <div className="ac-meta-row"><span className="ac-label">Стол</span><span className="ac-value">{tableLabel}</span></div>
             <div className="ac-meta-row"><span className="ac-label">Гости</span><span className="ac-value">{guestCount}</span></div>
             <div className="ac-meta-row"><span className="ac-label">{ROLE_LABELS[userRole] || userRole}</span><span className="ac-value">{staffName}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">Смена</span><span className="ac-value">{shiftNumber}</span></div>
           </div>
 
           <div className="ac-divider solid" />
@@ -192,7 +195,6 @@ export default function FiscalReceiptModal({
           <div className="ac-fiscal">
             <div className="ac-fiscal-row"><span>Терминал ID:</span><span>{fmTerminalId || 'TERM-001'}</span></div>
             <div className="ac-fiscal-row"><span>Фискальный признак:</span><span>{fiscalSign || '—'}</span></div>
-            <div className="ac-fiscal-row"><span>Смена:</span><span>002</span></div>
           </div>
 
           <div className="ac-footer">Спасибо! Ждём вас снова.</div>
@@ -225,7 +227,7 @@ export default function FiscalReceiptModal({
                     totalSum, serviceAmount, servicePercent,
                     discountValue, qqsAmount, итого,
                     selectedMethod: selectedMethod ? methodLabel[selectedMethod] : 'Не выбран',
-                    splitAmounts, fmTerminalId, fiscalSign, qrCodeUrl,
+                    splitAmounts, fmTerminalId, fiscalSign, qrCodeUrl, shiftNumber,
                   }, paperSize)
                   await printText(printer, text)
                   printed = true

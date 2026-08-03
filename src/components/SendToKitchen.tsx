@@ -1,8 +1,13 @@
 import { useState } from 'react'
 import type { KitchenItem, OrderItem } from '../data/types'
 import { KitchenIcon, PlateIcon } from './Icons'
-import KitchenCheckModal from './KitchenCheckModal'
 import SpecificKitchenModal from './SpecificKitchenModal'
+import PrintLoadingModal from './PrintLoadingModal'
+import { buildKitchenReceiptHtml, printReceiptHtml, type PaperSize } from '../utils/receiptHtml'
+import { formatKitchenReceipt, printText } from '../utils/printService'
+
+const KITCHEN_PRINTERS_KEY = 'pos_v2_kitchen_printer_name'
+const KITCHEN_PAPER_KEY = 'pos_v2_kitchen_paper_size'
 
 function getPhoto(name: string): string | undefined {
   try {
@@ -48,8 +53,9 @@ export default function SendToKitchen({
 }: SendToKitchenProps) {
   const [excluded, setExcluded] = useState<Set<number>>(new Set())
   const [showCancelModal, setShowCancelModal] = useState(false)
-  const [showCheckModal, setShowCheckModal] = useState(false)
   const [specificKitchen, setSpecificKitchen] = useState<string | null>(null)
+  const [printing, setPrinting] = useState<{ items: KitchenItem[]; kitchenName: string; printer?: string; paperSize?: PaperSize } | null>(null)
+  const [printerError, setPrinterError] = useState('')
   const actionButtons = loadButtons()
 
   function toggleExclude(id: number) {
@@ -65,7 +71,44 @@ export default function SendToKitchen({
   const someExcluded = excluded.size > 0 && excluded.size < items.length
 
   function handleSend() {
-    setShowCheckModal(true)
+    if (itemsToSend.length === 0) return
+    if (!localStorage.getItem(KITCHEN_PRINTERS_KEY)) {
+      setPrinterError('Выберите принтер для кухни в настройках')
+      return
+    }
+    setPrinterError('')
+    setPrinting({ items: itemsToSend, kitchenName: 'КУХНЯ' })
+  }
+
+  async function runKitchenPrint(p: { items: KitchenItem[]; kitchenName: string; printer?: string; paperSize?: PaperSize }) {
+    const printer = p.printer || localStorage.getItem(KITCHEN_PRINTERS_KEY) || ''
+    const paperSize: PaperSize = p.paperSize || ((localStorage.getItem(KITCHEN_PAPER_KEY) as PaperSize) || '58')
+    const now = new Date()
+    const dateStr = now.toLocaleDateString('ru-RU')
+    const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+    const receiptData = {
+      kitchenName: p.kitchenName,
+      tableLabel: tableLabel || 'Стол',
+      guestCount: guestCount || 2,
+      dateStr,
+      timeStr,
+      items: p.items.map(i => ({
+        name: i.name,
+        quantity: i.quantity,
+        comment: orderItems.find(oi => oi.id === i.id)?.comment,
+      })),
+      orderComment: orderComment || '',
+      orderTags: orderTags || [],
+      orderModifiers: orderModifiers || [],
+    }
+    const html = buildKitchenReceiptHtml(receiptData)
+    try {
+      await printReceiptHtml(printer, html, paperSize)
+    } catch (e) {
+      console.error('Печать изображением не удалась, пробуем текстом:', e)
+      const text = formatKitchenReceipt(receiptData, paperSize)
+      await printText(printer, text)
+    }
   }
 
   const itemsToSend = items.filter(i => !excluded.has(i.id))
@@ -178,17 +221,14 @@ export default function SendToKitchen({
         </div>
       )}
 
-      {showCheckModal && (
-        <KitchenCheckModal
-          items={itemsToSend}
-          orderItems={orderItems}
-          tableLabel={tableLabel || 'Стол'}
-          guestCount={guestCount || 2}
-          orderComment={orderComment || ''}
-          orderTags={orderTags || []}
-          orderModifiers={orderModifiers || []}
-          onPrint={() => { setShowCheckModal(false); onPrint() }}
-          onBack={() => setShowCheckModal(false)}
+      {printerError && <div className="kitchen-printer-error">{printerError}</div>}
+
+      {printing && (
+        <PrintLoadingModal
+          loadingLabel="Отправка на кухню..."
+          doneLabel="Отправлено на кухню"
+          task={() => runKitchenPrint(printing)}
+          onComplete={() => { setPrinting(null); onPrint() }}
         />
       )}
 
@@ -196,7 +236,11 @@ export default function SendToKitchen({
         <SpecificKitchenModal
           items={items}
           kitchenName={specificKitchen}
-          onPrint={() => setSpecificKitchen(null)}
+          onPrint={(selItems, printer, paperSize) => {
+            setSpecificKitchen(null)
+            if (!printer) return
+            setPrinting({ items: selItems, kitchenName: specificKitchen, printer, paperSize: paperSize as PaperSize })
+          }}
           onBack={() => setSpecificKitchen(null)}
         />
       )}

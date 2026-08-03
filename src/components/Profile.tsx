@@ -9,6 +9,7 @@ interface ProfileProps {
   shiftStartTime?: string
   shiftEndTime?: string
   shiftEnding?: boolean
+  shiftNumber?: string
   onShiftStart?: (time: string) => void
   onShiftEnd?: (time: string) => void
   activeTableCount?: number
@@ -23,7 +24,7 @@ function formatTime(d: Date) {
   return `${dateStr} ${timeStr}`
 }
 
-export default function Profile({ history = [], onChangeRole, shiftActive = false, shiftStartTime = '—', shiftEndTime = '—', shiftEnding = false, onShiftStart, onShiftEnd, activeTableCount = 0, userRole = 'waiter', staffName = 'Пользователь', staffId }: ProfileProps) {
+export default function Profile({ history = [], onChangeRole, shiftActive = false, shiftStartTime = '—', shiftEndTime = '—', shiftEnding = false, shiftNumber = '—', onShiftStart, onShiftEnd, activeTableCount = 0, userRole = 'waiter', staffName = 'Пользователь', staffId }: ProfileProps) {
   const [notify, setNotify] = useState('')
   const paidTotal = history
     .filter(h => h.status === 'paid')
@@ -76,6 +77,10 @@ export default function Profile({ history = [], onChangeRole, shiftActive = fals
         <div className="shift-section">
           <h3 className="shift-title">Смена</h3>
           <div className="shift-details">
+            <div className="shift-row">
+              <span className="shift-label">Номер смены:</span>
+              <span className="shift-value">{shiftNumber}</span>
+            </div>
             <div className="shift-row">
               <span className="shift-label">Начало:</span>
               <span className="shift-value">{shiftStartTime}</span>

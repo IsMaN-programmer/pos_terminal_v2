@@ -18,6 +18,7 @@ import AdminStock from './components/AdminStock'
 import AdminSettings from './components/AdminSettings'
 import AdminModifiers from './components/AdminModifiers'
 import AdminReports from './components/AdminReports'
+import AdminSupport from './components/AdminSupport'
 import FiscalModule from './components/FiscalModule'
 
 import PaymentPrecheck from './components/PaymentPrecheck'
@@ -104,13 +105,14 @@ function App() {
     startTime: string
     endTime: string
     ending: boolean
+    number: number
   }
   const [shiftByRole, setShiftByRole] = useState<Record<string, ShiftState>>(() => {
     try { return JSON.parse(localStorage.getItem('pos_v2_shiftByRole') || '{}') } catch { return {} }
   })
 
   function getShift(role: string): ShiftState {
-    return shiftByRole[role] || { active: false, startTime: '—', endTime: '—', ending: false }
+    return shiftByRole[role] || { active: false, startTime: '—', endTime: '—', ending: false, number: 0 }
   }
 
   const currentShift = getShift(userRole)
@@ -118,6 +120,8 @@ function App() {
   const shiftStartTime = currentShift.startTime
   const shiftEndTime = currentShift.endTime
   const shiftEnding = currentShift.ending
+  const shiftNumber = currentShift.number || 0
+  const shiftNumberStr = String(Math.max(1, shiftNumber)).padStart(3, '0')
 
   function updateShift(role: string, update: Partial<ShiftState>) {
     setShiftByRole(prev => ({ ...prev, [role]: { ...getShift(role), ...update } }))
@@ -312,11 +316,12 @@ function App() {
         createdByRole: userRole,
         createdByName: staff?.name,
         items: orderItems.map(i => ({ id: i.id, name: i.menuItem.name, quantity: i.quantity, unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik, photo: i.menuItem.photo })),
+        servicePercent: cpServicePercent,
       }, ...prev])
     }
     setCurrentScreen('tables')
     showToast('Чек отправлен на кассу')
-  }, [selectedTable, showToast, orderItems, saveCurrentOrder, userRole, staff])
+  }, [selectedTable, showToast, orderItems, saveCurrentOrder, userRole, staff, cpServicePercent])
 
   useEffect(() => {
     let cancelled = false
@@ -487,6 +492,7 @@ function App() {
             guestCount={orderGuestCount}
             staffName={staff?.name || 'Пользователь'}
             userRole={userRole}
+            shiftNumber={shiftNumberStr}
             onBack={() => setCurrentScreen('tables')}
             onDelivered={handleDelivered}
             onAvansPrinted={handleAvansPrinted}
@@ -526,6 +532,7 @@ function App() {
             guestCount={pd.guestCount}
             staffName={staff?.name || 'Пользователь'}
             userRole={userRole}
+            shiftNumber={shiftNumberStr}
             servicePercent={pd.servicePercent}
             discountType={pd.discountType}
             discountPercent={pd.discountPercent}
@@ -559,6 +566,7 @@ function App() {
                   discountType: pd.discountType,
                   discountPercent: pd.discountPercent,
                   discountAmount: pd.discountAmount,
+                  servicePercent: pd.servicePercent,
                   fiscalSign: fiscalData?.fiscalSign || '',
                   qrCodeUrl: fiscalData?.qrCodeUrl || '',
                   terminalId: fiscalData?.terminalId || '',
@@ -601,6 +609,8 @@ function App() {
         return <AdminModifiers />
       case 'admin_reports':
         return <AdminReports history={history} />
+      case 'admin_support':
+        return <AdminSupport />
       case 'fiscal_module':
         return <FiscalModule />
       case 'profile':
@@ -613,12 +623,13 @@ function App() {
             shiftStartTime={shiftStartTime}
             shiftEndTime={shiftEndTime}
             shiftEnding={shiftEnding}
-            onShiftStart={(time) => { updateShift(userRole, { active: true, startTime: time }) }}
+            onShiftStart={(time) => { updateShift(userRole, { active: true, startTime: time, number: shiftNumber + 1 }) }}
             onShiftEnd={(time) => { updateShift(userRole, { endTime: time, ending: true }); setShiftEndRedirectRole(userRole) }}
             activeTableCount={activeTableCount}
             userRole={userRole}
             staffName={staff?.name || 'Пользователь'}
             staffId={staff ? `${userRole === 'cashier' ? 'CSH' : userRole === 'admin' ? 'ADM' : 'WTR'}-${String(staff.id).padStart(3, '0')}` : '—'}
+            shiftNumber={shiftNumber > 0 ? shiftNumberStr : '—'}
           />
         )
       default:

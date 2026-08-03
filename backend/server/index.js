@@ -135,21 +135,51 @@ app.post("/api/fiscal-register-receipt/:factoryId", async (req, res) => {
       d.setMinutes(d.getMinutes() + 5);
       return fmtDt(d);
     };
-    // Sync receipt time with FM module clock to avoid "receipt time is in the past"
+    const openShift = async (dt) => {
+      try {
+        await fetch(`http://127.0.0.1:3449/FiscalDrive/ZReport/Open/${factoryId}?DateTime=${encodeURIComponent(dt || fmNow())}`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
+        });
+      } catch (_) {}
+    };
+    // Ensure the shift is open before registering
+    let shiftOpenTime = "";
+    try {
+      const zInfoRes = await fetch(`http://127.0.0.1:3449/FiscalDrive/ZReport/Info/${factoryId}`, {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: "Index=0"
+      });
+      if (zInfoRes.ok) {
+        const zi = await zInfoRes.json().catch(() => ({}));
+        const zd = zi?.data && typeof zi.data === 'object' ? zi.data : zi;
+        shiftOpenTime = zd.OpenTime || zd.openTime || zd.opentime || zd.LastOpenTime || zd.lastOpenTime || zd.lastopentime || "";
+        if (!shiftOpenTime) {
+          await openShift(fmNow());
+        }
+      } else {
+        await openShift(fmNow());
+      }
+    } catch (_) {}
+    // Read the FM's last operation time
+    let lastOp = "";
     try {
       const infoRes = await fetch(`http://127.0.0.1:3449/FiscalDrive/FiscalMemory/Info/${factoryId}`, {
         method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
       });
       if (infoRes.ok) {
         const info = await infoRes.json();
-        const lastOp = info?.LastOperationTime || "";
-        if (lastOp && fdReceipt.Time && fdReceipt.Time < lastOp) {
-          const d = new Date(lastOp.replace(" ", "T"));
-          d.setSeconds(d.getSeconds() + 10);
-          fdReceipt.Time = fmtDt(d);
-        }
+        lastOp = info?.LastOperationTime || info?.lastOperationTime || "";
       }
     } catch (_) {}
+    // Receipt time must be after the FM clock and after all known FD times
+    const refs = [new Date(Date.now() + 300000)];
+    for (const t of [fdReceipt.Time, lastOp, shiftOpenTime]) {
+      if (!t) continue;
+      const parsed = new Date(String(t).replace(" ", "T"));
+      if (!isNaN(parsed.getTime())) refs.push(parsed);
+    }
+    const safeBase = new Date(Math.max(...refs.map(r => r.getTime())));
+    safeBase.setSeconds(safeBase.getSeconds() + 30);
+    fdReceipt.Time = fmtDt(safeBase);
     let txidText = "";
     const doGetTXID = async () => {
       const txidRes = await fetch(`http://127.0.0.1:3449/FiscalDrive/Receipt/GetTXID/${factoryId}`, {
@@ -169,22 +199,34 @@ app.post("/api/fiscal-register-receipt/:factoryId", async (req, res) => {
       txidText = await doGetTXID();
     } catch (e) {
       // Shift likely not open — try opening it, then retry GetTXID
-      try {
-        await fetch(`http://127.0.0.1:3449/FiscalDrive/ZReport/Open/${factoryId}?DateTime=${encodeURIComponent(fmNow())}`, {
-          method: "POST", headers: { "Content-Type": "application/json" }, body: "{}"
-        });
-      } catch (_) {}
+      await openShift(fdReceipt.Time);
       txidText = await doGetTXID();
     }
     const txIdVal = parseInt(txidText, 10);
     if (isNaN(txIdVal)) throw new Error(`Invalid TXID: ${txidText}`);
 
-    const registerRes = await fetch(`http://127.0.0.1:3449/FiscalDrive/Receipt/RegisterTXID/${factoryId}`, {
-      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `TXID=${txIdVal}`
-    });
-    if (!registerRes.ok) {
-      const errText = await registerRes.text().catch(() => "");
-      throw new Error(`RegisterTXID failed: ${registerRes.status} ${errText}`);
+    const registerTXID = async () => {
+      const r = await fetch(`http://127.0.0.1:3449/FiscalDrive/Receipt/RegisterTXID/${factoryId}`, {
+        method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: `TXID=${txIdVal}`
+      });
+      if (!r.ok) {
+        const errText = await r.text().catch(() => "");
+        throw new Error(`RegisterTXID failed: ${r.status} ${errText}`);
+      }
+      return r;
+    };
+    let registerRes;
+    try {
+      registerRes = await registerTXID();
+    } catch (e) {
+      // Shift likely already closed — open it with a time just before the
+      // receipt time (receipt must be later than the shift open), then retry
+      try {
+        const d = new Date(fdReceipt.Time.replace(" ", "T"));
+        d.setSeconds(d.getSeconds() - 5);
+        await openShift(fmtDt(d));
+      } catch (_) {}
+      registerRes = await registerTXID();
     }
     const registerData = await registerRes.json();
 

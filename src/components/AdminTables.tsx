@@ -164,14 +164,22 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
 
   function handleAddTable() {
     const zoneTables = tables.filter(t => t.zone === zone)
-    const maxNum = Math.max(...zoneTables.map(t => {
-      const m = t.name.match(/\d+/)
-      return m ? parseInt(m[0]) : 0
-    }), 0)
+    let maxNum = 0
+    let prefix = 'Стол'
+    zoneTables.forEach(t => {
+      const m = t.name.match(/^(.*?)\s*(\d+)\s*$/)
+      if (m) {
+        const num = parseInt(m[2])
+        if (num > maxNum) {
+          maxNum = num
+          prefix = m[1].trim() || prefix
+        }
+      }
+    })
     const id = Math.max(...tables.map(t => t.id), 0) + 1
     onTablesChange([...tables, {
       id,
-      name: `Стол ${maxNum + 1}`,
+      name: `${prefix} ${maxNum + 1}`,
       zone,
       seats: 4,
       status: 'free',

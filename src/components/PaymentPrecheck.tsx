@@ -26,6 +26,7 @@ interface PaymentPrecheckProps {
   guestCount: number
   staffName: string
   userRole: string
+  shiftNumber?: string
   onBack?: () => void
   onDelivered?: () => void
   onAvansPrinted?: () => void
@@ -56,7 +57,7 @@ function getNextOrderNumber(): number {
 }
 
 export default function PaymentPrecheck({
-  orderItems, table, guestCount, staffName, userRole, onBack, onDelivered, onAvansPrinted, onSendToCashier,
+  orderItems, table, guestCount, staffName, userRole, shiftNumber = '001', onBack, onDelivered, onAvansPrinted, onSendToCashier,
   avansPrinted = false,
 }: PaymentPrecheckProps) {
   const [printingAvans, setPrintingAvans] = useState(false)
@@ -127,7 +128,7 @@ export default function PaymentPrecheck({
     const html = buildAvansReceiptHtml({
       orgName: orgName || '—', orgAddress: orgAddress || '', orgPhone: orgPhone || '',
       orgStir: orgStir || '—', dateStr, timeStr, orderNum: avansOrderNum || getNextOrderNumber(),
-      tableLabel: table?.name || '—', guestCount, staffName, roleLabel,
+      tableLabel: table?.name || '—', guestCount, staffName, roleLabel, shiftNumber,
       items: orderItems.map(i => ({
         name: i.menuItem.name, quantity: i.quantity,
         unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik || '',
@@ -143,7 +144,7 @@ export default function PaymentPrecheck({
         const text = formatAvansReceipt({
           orgName: orgName || '—', orgAddress: orgAddress || '', orgPhone: orgPhone || '',
           orgStir: orgStir || '—', dateStr, timeStr, orderNum: avansOrderNum,
-          tableLabel: table?.name || '—', guestCount, staffName, roleLabel,
+          tableLabel: table?.name || '—', guestCount, staffName, roleLabel, shiftNumber,
           items: orderItems.map(i => ({
             name: i.menuItem.name, quantity: i.quantity,
             unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik || '',

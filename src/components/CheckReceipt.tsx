@@ -6,6 +6,7 @@ import { fiscalDriveApi, runFullOfdSync } from '../services/fiscalDriveApi'
 import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetchAndStoreCompanyData } from '../utils/companyInfo'
 import { buildFiscalReceiptHtml, printReceiptHtml, type PaperSize } from '../utils/receiptHtml'
 import { formatFiscalReceipt, printText } from '../utils/printService'
+import { getReceiptLogo } from '../utils/receiptLogo'
 
 const ORDER_COUNTER_KEY = 'pos_v2_order_counter'
 const PRINTERS_KEY = 'pos_v2_printer_name'
@@ -42,6 +43,7 @@ interface CheckReceiptProps {
   guestCount: number
   staffName: string
   userRole: string
+  shiftNumber?: string
   servicePercent: number
   discountType: 'percent' | 'amount'
   discountPercent: number
@@ -63,7 +65,7 @@ const methodLabel: Record<string, string> = {
 const ROLE_LABELS: Record<string, string> = { waiter: 'Официант', cashier: 'Кассир', admin: 'Администратор' }
 
 export default function CheckReceipt({
-  items, tableName, guestCount, staffName, userRole, servicePercent,
+  items, tableName, guestCount, staffName, userRole, shiftNumber = '001', servicePercent,
   discountType, discountPercent, discountAmount, selectedMethod, splitAmounts,
   onBack, onComplete,
 }: CheckReceiptProps) {
@@ -239,8 +241,14 @@ export default function CheckReceipt({
         OwnerType: 0,
       }
     })
+    const fdNow = () => {
+      const d = new Date()
+      d.setMinutes(d.getMinutes() + 5)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+    }
     return {
-      Time: new Date().toISOString().replace('T', ' ').slice(0, 19),
+      Time: fdNow(),
       ReceivedCash: selectedMethod === 'cash' ? Math.round(итого * 100) : 0,
       ReceivedCard: selectedMethod !== 'cash' ? Math.round(итого * 100) : 0,
       Type: 0,
@@ -355,7 +363,7 @@ export default function CheckReceipt({
     const html = buildFiscalReceiptHtml({
       orgName: orgName || '—', orgAddress: orgAddress || '', orgPhone: orgPhone || '',
       orgStir: orgStir || '—', dateStr: receiptDateStr, timeStr: receiptTimeStr, orderNum,
-      tableLabel: tableName, guestCount, staffName, roleLabel,
+      tableLabel: tableName, guestCount, staffName, roleLabel, shiftNumber,
       items: items.map(i => ({
         name: i.menuItem.name, quantity: i.quantity,
         unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik || '',
@@ -374,7 +382,7 @@ export default function CheckReceipt({
         const text = formatFiscalReceipt({
           orgName: orgName || '—', orgAddress: orgAddress || '', orgPhone: orgPhone || '',
           orgStir: orgStir || '—', dateStr: receiptDateStr, timeStr: receiptTimeStr, orderNum,
-          tableLabel: tableName, guestCount, staffName, roleLabel,
+          tableLabel: tableName, guestCount, staffName, roleLabel, shiftNumber,
           items: items.map(i => ({
             name: i.menuItem.name, quantity: i.quantity,
             unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik || '',
@@ -451,7 +459,7 @@ export default function CheckReceipt({
             <div className="payment-summary-inner" style={{ padding: 0 }}>
               <div className="ac-receipt paper-58" style={{ width: '100%', border: 'none', margin: 0, padding: '20px 24px', maxWidth: 'none', boxSizing: 'border-box' }}>
                 <div style={{ textAlign: 'center', marginBottom: 8 }}>
-                  <img src="/unnamed.png" alt="Logo" style={{ width: 100, height: 100, objectFit: 'contain' }} />
+                  <img src={getReceiptLogo()} alt="Logo" style={{ width: 100, height: 100, objectFit: 'contain' }} />
                 </div>
                 <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700 }}>{orgName}</div>
                 <div style={{ textAlign: 'center', fontSize: 10, color: '#555' }}>{orgAddress}</div>

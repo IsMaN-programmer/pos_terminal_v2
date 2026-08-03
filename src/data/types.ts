@@ -110,6 +110,7 @@ export type Screen =
   | 'admin_settings'
   | 'admin_modifiers'
   | 'admin_reports'
+  | 'admin_support'
   | 'fiscal_module'
 
 export interface HistoryEntry {
@@ -128,6 +129,7 @@ export interface HistoryEntry {
   discountType?: 'percent' | 'amount'
   discountPercent?: number
   discountAmount?: number
+  servicePercent?: number
   fiscalSign?: string
   qrCodeUrl?: string
   terminalId?: string
@@ -143,6 +145,8 @@ export interface Branch {
   name: string
   address: string
   phone: string
+  terminalId?: string
+  licenseNumber?: string
 }
 
 export interface StaffRecord {

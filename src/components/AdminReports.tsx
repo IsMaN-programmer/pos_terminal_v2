@@ -297,6 +297,11 @@ export default function AdminReports({ history = [] }: AdminReportsProps) {
               <div className="rd-meta-line"><span>Тип заказа:</span><span>{ORDER_TYPE_LABELS[detailEntry.status] || detailEntry.status}</span></div>
               <div className="rd-meta-line"><span>QQS (12%):</span><span>{Math.round(detailEntry.total * 12 / 112).toLocaleString()} сум</span></div>
               <div className="rd-meta-line"><span>Скидка:</span><span>{detailEntry.discountAmount ? `${detailEntry.discountAmount.toLocaleString()} сум` : detailEntry.discountPercent ? `${detailEntry.discountPercent}%` : '0 сум'}</span></div>
+              {detailEntry.servicePercent ? (
+                <div className="rd-meta-line"><span>Сервис ({detailEntry.servicePercent}%):</span><span>{Math.round(detailEntry.total * detailEntry.servicePercent / 100).toLocaleString()} сум</span></div>
+              ) : (
+                <div className="rd-meta-line"><span>Сервис:</span><span>0 сум</span></div>
+              )}
               <div className="rd-meta-line rd-meta-total"><span>Сумма оплаты</span><span>{detailEntry.total.toLocaleString()} сум</span></div>
             </div>
             <div className="rd-footer">
