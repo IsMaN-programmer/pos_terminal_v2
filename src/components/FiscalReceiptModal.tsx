@@ -5,6 +5,7 @@ import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetc
 import { getReceiptLogo } from '../utils/receiptLogo'
 import { formatFiscalReceipt, printText } from '../utils/printService'
 import { printReceiptNode } from '../utils/receiptPrint'
+import { useT, tr, locale } from '../i18n'
 
 const PAPER_KEY = 'pos_v2_paper_size'
 const PRINTERS_KEY = 'pos_v2_printer_name'
@@ -34,15 +35,7 @@ interface FiscalReceiptModalProps {
   onBack: () => void
 }
 
-const ROLE_LABELS: Record<string, string> = { waiter: 'Официант', cashier: 'Кассир', admin: 'Администратор' }
-
 const TAX_TYPE = 'QQS 12%'
-
-const methodLabel: Record<string, string> = {
-  cash: 'Наличной',
-  card: 'Карта',
-  click: 'Click/Payme',
-}
 
 export default function FiscalReceiptModal({
   orderItems, tableLabel, guestCount, orderNum, staffName, userRole,
@@ -50,6 +43,13 @@ export default function FiscalReceiptModal({
   fmTerminalId, fiscalSign, qrCodeUrl, shiftNumber = '001',
   onPrint, onBack,
 }: FiscalReceiptModalProps) {
+  const t = useT()
+  const ROLE_LABELS: Record<string, string> = { waiter: t('Официант', 'Ofitsiant'), cashier: t('Кассир', 'Kassir'), admin: t('Администратор', 'Administrator') }
+  const methodLabel: Record<string, string> = {
+    cash: t('Наличной', 'Naqd'),
+    card: t('Карта', 'Karta'),
+    click: t('Другое', 'Boshqa'),
+  }
   const [paperSize, setPaperSize] = useState<PaperSize>((localStorage.getItem(PAPER_KEY) as PaperSize) || '58')
   const [orgStir, setOrgStir] = useState(getCompanyTin)
   const [orgName, setOrgName] = useState(getCompanyName)
@@ -87,8 +87,8 @@ export default function FiscalReceiptModal({
   }, [])
 
   const now = new Date()
-  const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  const dateStr = now.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const vat = qqsAmount
 
   return (
@@ -111,13 +111,13 @@ export default function FiscalReceiptModal({
 
           <div className="ac-meta">
             <div className="ac-meta-row"><span className="ac-label">STIR</span><span className="ac-value">{orgStir || '—'}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">Дата</span><span className="ac-value">{dateStr}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">Время</span><span className="ac-value">{timeStr}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">Заказ</span><span className="ac-value">#{orderNum}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">Стол</span><span className="ac-value">{tableLabel}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">Гости</span><span className="ac-value">{guestCount}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Дата', 'Sana')}</span><span className="ac-value">{dateStr}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Время', 'Vaqt')}</span><span className="ac-value">{timeStr}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Заказ', 'Buyurtma')}</span><span className="ac-value">#{orderNum}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Стол', 'Stol')}</span><span className="ac-value">{tableLabel}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Гости', 'Mehmonlar')}</span><span className="ac-value">{guestCount}</span></div>
             <div className="ac-meta-row"><span className="ac-label">{ROLE_LABELS[userRole] || userRole}</span><span className="ac-value">{staffName}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">Смена</span><span className="ac-value">{shiftNumber}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Смена', 'Smena')}</span><span className="ac-value">{shiftNumber}</span></div>
           </div>
 
           <div className="ac-divider solid" />
@@ -127,7 +127,7 @@ export default function FiscalReceiptModal({
               <div key={item.id} className="ac-item">
                 <div className="ac-item-line">
                   <span className="ac-item-name">{item.menuItem.name}</span>
-                  <span className="ac-item-right">{item.quantity} x {item.unitPrice.toLocaleString()} сум</span>
+                  <span className="ac-item-right">{item.quantity} x {item.unitPrice.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
                 <div className="ac-item-tax">{TAX_TYPE}: {Math.round(item.total * 12 / 100).toLocaleString()}</div>
                 <div className="ac-item-mxik">MXIK: {item.menuItem.mxik || '09901001001000000'}</div>
@@ -139,28 +139,28 @@ export default function FiscalReceiptModal({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ fontWeight: 700, color: '#000' }}>Общая сумма</span>
-              <span style={{ fontWeight: 700, color: '#000' }}>{totalSum.toLocaleString()} сум</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{t('Общая сумма', 'Umumiy summa')}</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{totalSum.toLocaleString()} {t('сум', "so'm")}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ fontWeight: 700, color: '#000' }}>Сервис ({servicePercent}%)</span>
-              <span style={{ fontWeight: 700, color: '#000' }}>{serviceAmount.toLocaleString()} сум</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{t(`Сервис (${servicePercent}%)`, `Xizmat (${servicePercent}%)`)}</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{serviceAmount.toLocaleString()} {t('сум', "so'm")}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
-              <span style={{ fontWeight: 700, color: '#000' }}>Скидка</span>
-              <span style={{ fontWeight: 700, color: discountValue > 0 ? '#ef4444' : '#000' }}>{discountValue > 0 ? `−${discountValue.toLocaleString()}` : '0'} сум</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{t('Скидка', 'Chegirma')}</span>
+              <span style={{ fontWeight: 700, color: discountValue > 0 ? '#ef4444' : '#000' }}>{discountValue > 0 ? `−${discountValue.toLocaleString()}` : '0'} {t('сум', "so'm")}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
               <span style={{ fontWeight: 700, color: '#000' }}>QQS (12%)</span>
-              <span style={{ fontWeight: 700, color: '#000' }}>{qqsAmount.toLocaleString()} сум</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{qqsAmount.toLocaleString()} {t('сум', "so'm")}</span>
             </div>
           </div>
 
           <div className="ac-divider solid" />
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0' }}>
-            <span style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>ИТОГО:</span>
-            <span style={{ fontSize: 17, fontWeight: 700, color: '#000' }}>{итого.toLocaleString()} сум</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#000' }}>{t('ИТОГО:', 'JAMI:')}</span>
+            <span style={{ fontSize: 17, fontWeight: 700, color: '#000' }}>{итого.toLocaleString()} {t('сум', "so'm")}</span>
           </div>
           <div className="ac-vat">{TAX_TYPE}: {vat.toLocaleString()}</div>
 
@@ -168,15 +168,15 @@ export default function FiscalReceiptModal({
 
           {splitAmounts ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3, padding: '4px 0', fontSize: 11, fontWeight: 700, color: '#000' }}>
-              <span style={{ fontWeight: 700, color: '#000', marginBottom: 2 }}>Разделение счета:</span>
-              {splitAmounts.cash > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Наличной</span><span style={{ fontWeight: 700 }}>{splitAmounts.cash.toLocaleString()} сум</span></div>}
-              {splitAmounts.card > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Карта</span><span style={{ fontWeight: 700 }}>{splitAmounts.card.toLocaleString()} сум</span></div>}
-              {splitAmounts.click > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Click/Payme</span><span style={{ fontWeight: 700 }}>{splitAmounts.click.toLocaleString()} сум</span></div>}
+              <span style={{ fontWeight: 700, color: '#000', marginBottom: 2 }}>{t('Разделение счета:', "Hisobni bo'lish:")}</span>
+              {splitAmounts.cash > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Наличной', 'Naqd')}</span><span style={{ fontWeight: 700 }}>{splitAmounts.cash.toLocaleString()} {t('сум', "so'm")}</span></div>}
+              {splitAmounts.card > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Карта', 'Karta')}</span><span style={{ fontWeight: 700 }}>{splitAmounts.card.toLocaleString()} {t('сум', "so'm")}</span></div>}
+              {splitAmounts.click > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Другое', 'Boshqa')}</span><span style={{ fontWeight: 700 }}>{splitAmounts.click.toLocaleString()} {t('сум', "so'm")}</span></div>}
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>
-              <span style={{ fontWeight: 700, color: '#000' }}>Выбор оплаты:</span>
-              <span style={{ fontWeight: 700, color: '#000' }}>{selectedMethod ? methodLabel[selectedMethod] : 'Не выбран'}</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{t('Выбор оплаты:', "To'lov usuli:")}</span>
+              <span style={{ fontWeight: 700, color: '#000' }}>{selectedMethod ? methodLabel[selectedMethod] : t('Не выбран', 'Tanlanmagan')}</span>
             </div>
           )}
 
@@ -193,11 +193,11 @@ export default function FiscalReceiptModal({
           <div className="ac-divider dashed" />
 
           <div className="ac-fiscal">
-            <div className="ac-fiscal-row"><span>Терминал ID:</span><span>{fmTerminalId || 'TERM-001'}</span></div>
-            <div className="ac-fiscal-row"><span>Фискальный признак:</span><span>{fiscalSign || '—'}</span></div>
+            <div className="ac-fiscal-row"><span>{t('Терминал ID:', 'Terminal ID:')}</span><span>{fmTerminalId || 'TERM-001'}</span></div>
+            <div className="ac-fiscal-row"><span>{t('Фискальный признак:', 'Fiskal belgi:')}</span><span>{fiscalSign || '—'}</span></div>
           </div>
 
-          <div className="ac-footer">Спасибо! Ждём вас снова.</div>
+          <div className="ac-footer">{t('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.')}</div>
         </div>
 
         <div className="ac-actions">
@@ -207,7 +207,7 @@ export default function FiscalReceiptModal({
             if (printer) {
               setPrinting(true)
               try {
-                if (!receiptRef.current) throw new Error('Чек не готов к печати')
+                if (!receiptRef.current) throw new Error(tr('Чек не готов к печати', 'Chek chop etishga tayyor emas'))
                 await printReceiptNode(printer, receiptRef.current, paperSize)
                 printed = true
               } catch (e) {
@@ -226,13 +226,13 @@ export default function FiscalReceiptModal({
                     })),
                     totalSum, serviceAmount, servicePercent,
                     discountValue, qqsAmount, итого,
-                    selectedMethod: selectedMethod ? methodLabel[selectedMethod] : 'Не выбран',
+                    selectedMethod: selectedMethod ? methodLabel[selectedMethod] : t('Не выбран', 'Tanlanmagan'),
                     splitAmounts, fmTerminalId, fiscalSign, qrCodeUrl, shiftNumber,
                   }, paperSize)
                   await printText(printer, text)
                   printed = true
                 } catch (e2) {
-                  alert('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'))
+                  alert(tr('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'), "Chop etish xatosi: " + (e2 instanceof Error ? e2.message : "noma'lum xato")))
                 }
               } finally {
                 setPrinting(false)
@@ -245,7 +245,7 @@ export default function FiscalReceiptModal({
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            {printing ? 'Печать…' : 'Печатать'}
+            {printing ? t('Печать…', 'Chop etilmoqda…') : t('Печатать', 'Chop etish')}
           </button>
           <button className="ac-back-btn" onClick={onBack}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

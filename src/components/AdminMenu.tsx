@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useT } from '../i18n'
 interface StockGood {
   id: number
   name: string
@@ -46,6 +47,7 @@ export default function AdminMenu() {
   const [actionMode, setActionMode] = useState<'edit' | 'delete' | null>(null)
   const [modal, setModal] = useState<{ type: 'add' | 'edit' | 'delete'; name?: string } | null>(null)
   const [formName, setFormName] = useState('')
+  const t = useT()
 
   function loadData() {
     setGoods(loadGoods())
@@ -130,7 +132,7 @@ export default function AdminMenu() {
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 5v14" /><path d="M6 5v3a5 5 0 0 0 5 5" /><path d="M17 3v16" /><path d="M17 10a3 3 0 0 0 0-6" />
           </svg>
-          Управление Меню
+          {t('Управление Меню', 'Menyu boshqaruvi')}
         </h1>
       </div>
 
@@ -144,7 +146,7 @@ export default function AdminMenu() {
             {cat}
           </button>
         ))}
-        <button className="admin-cat-add-btn" title="Добавить категорию" onClick={() => { setFormName(''); setModal({ type: 'add' }) }}>+</button>
+        <button className="admin-cat-add-btn" title={t('Добавить категорию', 'Kategoriya qo\'shish')} onClick={() => { setFormName(''); setModal({ type: 'add' }) }}>+</button>
       </div>
 
       <div className="admin-toolbar">
@@ -152,36 +154,36 @@ export default function AdminMenu() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
-          <input className="admin-search-input" placeholder="Поиск по блюду или МХИК..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="admin-search-input" placeholder={t('Поиск по блюду или МХИК...', 'Taom yoki MXIK bo\'yicha qidirish...')} value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <button className={`at-action-btn${actionMode === 'edit' ? ' active' : ''}`} onClick={() => setActionMode(a => a === 'edit' ? null : 'edit')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
           </svg>
-          Изменить
+          {t('Изменить', 'O\'zgartirish')}
         </button>
         <button className={`at-action-btn at-action-del${actionMode === 'delete' ? ' active' : ''}`} onClick={() => setActionMode(a => a === 'delete' ? null : 'delete')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="3 6 5 6 21 6" />
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
           </svg>
-          Удалить
+          {t('Удалить', 'O\'chirish')}
         </button>
       </div>
 
-      {actionMode && <div className="at-hint">Нажмите на категорию, чтобы {actionMode === 'edit' ? 'изменить' : 'удалить'}</div>}
+      {actionMode && <div className="at-hint">{actionMode === 'edit' ? t('Нажмите на категорию, чтобы изменить', 'Kategoriyani o\'zgartirish uchun bosing') : t('Нажмите на категорию, чтобы удалить', 'Kategoriyani o\'chirish uchun bosing')}</div>}
 
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
               <th>№</th>
-              <th>Имя</th>
-              <th>Мхик код</th>
-              <th>Сумма</th>
-              <th>Категория</th>
-              <th>Единица измерения</th>
+              <th>{t('Имя', 'Nomi')}</th>
+              <th>{t('Мхик код', 'MXIK kodi')}</th>
+              <th>{t('Сумма', 'Summa')}</th>
+              <th>{t('Категория', 'Kategoriya')}</th>
+              <th>{t('Единица измерения', 'O\'lchov birligi')}</th>
             </tr>
           </thead>
           <tbody>
@@ -190,13 +192,13 @@ export default function AdminMenu() {
                 <td>{idx + 1}</td>
                 <td style={{ fontWeight: 600 }}>{item.name}</td>
                 <td style={{ fontWeight: 600 }}>{item.mxik}</td>
-                <td>{item.sum.toLocaleString()} сум</td>
+                <td>{item.sum.toLocaleString()} {t('сум', 'so\'m')}</td>
                 <td><span className="admin-role-badge">{item.category}</span></td>
                 <td>{item.unit}</td>
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6} style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>Нет блюд</td></tr>
+              <tr><td colSpan={6} style={{ textAlign: 'center', color: '#94a3b8', padding: 40 }}>{t('Нет блюд', 'Taomlar yo\'q')}</td></tr>
             )}
           </tbody>
         </table>
@@ -205,11 +207,11 @@ export default function AdminMenu() {
       {modal?.type === 'add' && (
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Добавить категорию</h3>
-            <input className="modal-input" placeholder="Название категории..." value={formName} onChange={e => setFormName(e.target.value)} />
+            <h3 className="modal-title">{t('Добавить категорию', 'Kategoriya qo\'shish')}</h3>
+            <input className="modal-input" placeholder={t('Название категории...', 'Kategoriya nomi...')} value={formName} onChange={e => setFormName(e.target.value)} />
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setModal(null)}>Назад</button>
-              <button className="modal-btn save" onClick={handleSaveCategory}>Сохранить</button>
+              <button className="modal-btn cancel" onClick={() => setModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn save" onClick={handleSaveCategory}>{t('Сохранить', 'Saqlash')}</button>
             </div>
           </div>
         </div>
@@ -218,11 +220,11 @@ export default function AdminMenu() {
       {modal?.type === 'edit' && (
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Изменить категорию</h3>
-            <input className="modal-input" placeholder="Название категории..." value={formName} onChange={e => setFormName(e.target.value)} />
+            <h3 className="modal-title">{t('Изменить категорию', 'Kategoriyani o\'zgartirish')}</h3>
+            <input className="modal-input" placeholder={t('Название категории...', 'Kategoriya nomi...')} value={formName} onChange={e => setFormName(e.target.value)} />
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setModal(null)}>Назад</button>
-              <button className="modal-btn save" onClick={handleSaveCategory}>Сохранить</button>
+              <button className="modal-btn cancel" onClick={() => setModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn save" onClick={handleSaveCategory}>{t('Сохранить', 'Saqlash')}</button>
             </div>
           </div>
         </div>
@@ -231,13 +233,13 @@ export default function AdminMenu() {
       {modal?.type === 'delete' && (
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Удалить категорию</h3>
+            <h3 className="modal-title">{t('Удалить категорию', 'Kategoriyani o\'chirish')}</h3>
             <p style={{ color: '#64748b', fontSize: 14, marginBottom: 16 }}>
-              Все блюда в категории «{modal.name}» также будут удалены из склада. Продолжить?
+              {t(`Все блюда в категории «${modal.name}» также будут удалены из склада. Продолжить?`, `«${modal.name}» kategoriyasidagi barcha taomlar ombordan ham o\'chiriladi. Davom etasizmi?`)}
             </p>
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setModal(null)}>Назад</button>
-              <button className="modal-btn" style={{ background: '#ef4444', color: '#fff', border: 'none' }} onClick={() => handleDeleteCategory(modal.name!)}>Удалить</button>
+              <button className="modal-btn cancel" onClick={() => setModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn" style={{ background: '#ef4444', color: '#fff', border: 'none' }} onClick={() => handleDeleteCategory(modal.name!)}>{t('Удалить', 'O\'chirish')}</button>
             </div>
           </div>
         </div>

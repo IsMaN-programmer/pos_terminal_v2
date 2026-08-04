@@ -151,6 +151,27 @@ ipcMain.handle('update:install', async () => {
   return true
 })
 
+ipcMain.handle('pdf:generate', async (_event, html) => {
+  const win = new BrowserWindow({
+    show: false,
+    width: 800,
+    height: 1100,
+    backgroundColor: '#ffffff',
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  })
+  try {
+    await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
+    const pdf = await win.webContents.printToPDF({ printBackground: true, pageSize: 'A4' })
+    return pdf.toString('base64')
+  } finally {
+    if (!win.isDestroyed()) win.destroy()
+  }
+})
+
 app.whenReady().then(async () => {
   app.setAppUserModelId('uz.posvk.posterminal')
   setupAutoUpdater()

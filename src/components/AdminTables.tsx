@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Table } from '../data/types'
+import { useT } from '../i18n'
 
 const ZONES_KEY = 'pos_v2_zones'
 const CATEGORIES_KEY = 'pos_v2_zone_categories'
@@ -36,6 +37,7 @@ interface AdminTablesProps {
 }
 
 export default function AdminTables({ tables, onTablesChange }: AdminTablesProps) {
+  const t = useT()
   const [allZones, setAllZones] = useState<string[]>(loadZones)
   const [categories, setCategories] = useState<string[]>(loadCategories)
   const [zoneCategory, setZoneCategory] = useState<Record<string, string>>(loadZoneCategory)
@@ -189,7 +191,7 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
   return (
     <div className="screen admin-tables">
       <div className="screen-header">
-        <h1 className="screen-title">Столы и Зоны</h1>
+        <h1 className="screen-title">{t('Столы и Зоны', 'Stollar va zonalar')}</h1>
       </div>
 
       <div className="admin-categories-row" style={{ marginBottom: 0 }}>
@@ -202,7 +204,7 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
             {cat}
           </button>
         ))}
-        <button className="admin-cat-add-btn" title="Добавить зону" onClick={() => { setFormName(''); setModal({ type: 'addCategory' }) }}>+</button>
+        <button className="admin-cat-add-btn" title={t('Добавить зону', "Zona qo'shish")} onClick={() => { setFormName(''); setModal({ type: 'addCategory' }) }}>+</button>
       </div>
 
       <div className="at-layout">
@@ -217,7 +219,7 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
               </button>
             </div>
           ))}
-          <button className="admin-cat-add-btn" title="Добавить категорию" style={{ alignSelf: 'center' }} onClick={() => { setFormName(''); setModal({ type: 'addZone' }) }}>
+          <button className="admin-cat-add-btn" title={t('Добавить категорию', "Kategoriya qo'shish")} style={{ alignSelf: 'center' }} onClick={() => { setFormName(''); setModal({ type: 'addZone' }) }}>
             +
           </button>
         </div>
@@ -230,32 +232,32 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
-                Изменить
+                {t('Изменить', "O'zgartirish")}
               </button>
               <button className={`at-action-btn at-action-del${actionMode === 'delete' ? ' active' : ''}`} onClick={() => setActionMode(a => a === 'delete' ? null : 'delete')}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="3 6 5 6 21 6" />
                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                 </svg>
-                Удалить
+                {t('Удалить', "O'chirish")}
               </button>
-              <button className="at-add-btn" onClick={handleAddTable}>+ Добавить</button>
+              <button className="at-add-btn" onClick={handleAddTable}>+ {t('Добавить', "Qo'shish")}</button>
             </div>
           </div>
-          {actionMode && <div className="at-hint">Нажмите на элемент, чтобы {actionMode === 'edit' ? 'изменить' : 'удалить'}</div>}
+          {actionMode && <div className="at-hint">{actionMode === 'edit' ? t('Нажмите на элемент, чтобы изменить', "O'zgartirish uchun elementga bosing") : t('Нажмите на элемент, чтобы удалить', "O'chirish uchun elementga bosing")}</div>}
           {zone && (
             <div className="at-grid">
-              {filtered.map(t => (
+              {filtered.map(tbl => (
                 <div
-                  key={t.id}
-                  className={`at-table-card at-status-${t.status}${actionMode ? ' at-clickable' : ''}${actionMode === 'delete' ? ' at-highlight-del' : ''}${actionMode === 'edit' ? ' at-highlight-edit' : ''}`}
-                  onClick={() => handleTableClick(t)}
+                  key={tbl.id}
+                  className={`at-table-card at-status-${tbl.status}${actionMode ? ' at-clickable' : ''}${actionMode === 'delete' ? ' at-highlight-del' : ''}${actionMode === 'edit' ? ' at-highlight-edit' : ''}`}
+                  onClick={() => handleTableClick(tbl)}
                 >
-                  <div className="at-table-num">{t.name}</div>
-                  <div className="at-table-status">{t.status === 'free' ? 'Свободен' : t.status === 'occupied' ? 'Занят' : t.status === 'ordered' ? 'Заказан' : t.status === 'payment_pending' ? 'Ожидает оплаты' : 'Забронирован'}</div>
+                  <div className="at-table-num">{tbl.name}</div>
+                  <div className="at-table-status">{tbl.status === 'free' ? t('Свободен', "Bo'sh") : tbl.status === 'occupied' ? t('Занят', 'Band') : tbl.status === 'ordered' ? t('Заказан', 'Buyurtma qilingan') : tbl.status === 'payment_pending' ? t('Ожидает оплаты', "To'lov kutilmoqda") : t('Забронирован', 'Bron qilingan')}</div>
                 </div>
               ))}
-              {filtered.length === 0 && <div className="at-empty">Нет столов в этой зоне</div>}
+              {filtered.length === 0 && <div className="at-empty">{t('Нет столов в этой зоне', "Bu zonada stollar yo'q")}</div>}
             </div>
           )}
         </div>
@@ -265,19 +267,19 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: 380 }}>
             <div className="modal-title">
-              {modal.type === 'table' ? `Изменить — ${modal.table!.name}` :
-               modal.type === 'zone' ? 'Изменить зону' :
-               modal.type === 'addZone' ? 'Добавить категорию' :
-               modal.type === 'addCategory' ? 'Добавить зону' :
-               'Изменить зону'}
+              {modal.type === 'table' ? `${t('Изменить', "O'zgartirish")} — ${modal.table!.name}` :
+               modal.type === 'zone' ? t('Изменить зону', 'Zonani o\'zgartirish') :
+               modal.type === 'addZone' ? t('Добавить категорию', "Kategoriya qo'shish") :
+               modal.type === 'addCategory' ? t('Добавить зону', "Zona qo'shish") :
+               t('Изменить зону', 'Zonani o\'zgartirish')}
             </div>
             <div className="at-form">
-              <label className="ab-form-label">Название</label>
+              <label className="ab-form-label">{t('Название', 'Nomi')}</label>
               <input
                 className="modal-input"
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
-                placeholder={modal.type === 'table' ? 'Новое название' : 'Название'}
+                placeholder={modal.type === 'table' ? t('Новое название', 'Yangi nom') : t('Название', 'Nomi')}
               />
             </div>
             {modal.type === 'editCategory' && (
@@ -287,13 +289,13 @@ export default function AdminTables({ tables, onTablesChange }: AdminTablesProps
                   style={{ width: '100%', background: '#fef2f2', color: '#ef4444', border: '1px solid #fecaca' }}
                   onClick={() => handleDeleteCategory(modal.categoryName!)}
                 >
-                  Удалить зону и все категории в ней
+                  {t('Удалить зону и все категории в ней', "Zona va undagi barcha kategoriyalarni o'chirish")}
                 </button>
               </div>
             )}
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setModal(null)}>Отмена</button>
-              <button className="modal-btn save" onClick={handleSave}>Сохранить</button>
+              <button className="modal-btn cancel" onClick={() => setModal(null)}>{t('Отмена', 'Bekor qilish')}</button>
+              <button className="modal-btn save" onClick={handleSave}>{t('Сохранить', 'Saqlash')}</button>
             </div>
           </div>
         </div>

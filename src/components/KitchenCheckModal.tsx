@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { OrderItem, KitchenItem } from '../data/types'
+import { useT, locale } from '../i18n'
 
 type PaperSize = '58' | '80'
 
@@ -21,9 +22,10 @@ export default function KitchenCheckModal({
   onPrint, onBack,
 }: KitchenCheckModalProps) {
   const [paperSize, setPaperSize] = useState<PaperSize>('58')
+  const t = useT()
   const now = new Date()
-  const dateStr = now.toLocaleDateString('ru-RU')
-  const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const dateStr = now.toLocaleDateString(locale())
+  const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
 
   return (
     <div className="modal-overlay" onClick={onBack}>
@@ -34,11 +36,11 @@ export default function KitchenCheckModal({
         </div>
 
         <div className={`kitchen-check-receipt paper-${paperSize}`}>
-          <div className="kc-header">КУХНЯ</div>
+          <div className="kc-header">{t('КУХНЯ', 'OSHXONA')}</div>
 
           <div className="kc-meta">
             <span>{tableLabel}</span>
-            <span>{guestCount} чел.</span>
+            <span>{guestCount} {t('чел.', 'kishi')}</span>
             <span>{dateStr} {timeStr}</span>
           </div>
 
@@ -53,7 +55,7 @@ export default function KitchenCheckModal({
           )}
 
           {orderModifiers.length > 0 && (
-            <div className="kc-order-mods">Модификаторы: {orderModifiers.join(', ')}</div>
+            <div className="kc-order-mods">{t('Модификаторы: ', 'Modifikatorlar: ')}{orderModifiers.join(', ')}</div>
           )}
 
           <div className="kc-items">
@@ -72,12 +74,12 @@ export default function KitchenCheckModal({
           </div>
 
           {items.length === 0 && (
-            <div className="kc-empty">Нет блюд для отправки</div>
+            <div className="kc-empty">{t('Нет блюд для отправки', "Yuborish uchun taomlar yo'q")}</div>
           )}
 
           <div className="kc-divider" />
 
-          <div className="kc-info">Заказ отправляется на кухню</div>
+          <div className="kc-info">{t('Заказ отправляется на кухню', 'Buyurtma oshxonaga yuborilmoqda')}</div>
         </div>
 
         <div className="kc-actions">
@@ -87,7 +89,7 @@ export default function KitchenCheckModal({
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            Печатать
+            {t('Печатать', 'Chop etish')}
           </button>
           <button className="kc-back-btn" onClick={onBack}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

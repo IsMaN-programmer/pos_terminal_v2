@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { fiscalDriveApi, runFullOfdSync } from '../services/fiscalDriveApi'
+import { tr, useT, locale } from '../i18n'
 
 const FM_LIST_KEY = 'pos_v2_fm_list'
 const SHIFT_OPEN_KEY = 'pos_v2_shift_open'
@@ -144,6 +145,7 @@ export default function FiscalModule() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [toast, setToast] = useState('')
+  const t = useT()
 
   const showToast = useCallback((msg: string) => {
     setToast(msg)
@@ -219,44 +221,44 @@ export default function FiscalModule() {
 
 
   const openShift = useCallback(async () => {
-    if (!factoryId) { showToast('Фискальный модуль не найден'); return }
+    if (!factoryId) { showToast(tr('Фискальный модуль не найден', 'Fiskal modul topilmadi')); return }
     setLoading(true)
     setError('')
     try {
       await fiscalDriveApi.openZReport(factoryId, await fdSafeTimeFromFm(factoryId))
-      showToast('Смена открыта')
+      showToast(tr('Смена открыта', 'Smena ochiq'))
       await fetchShiftInfo(factoryId)
     } catch (e: any) {
-      setError(`Не удалось открыть смену: ${e.message || 'ошибка'}`)
+      setError(tr(`Не удалось открыть смену: ${e.message || 'ошибка'}`, `Smenani ochishning imkoni bo\'lmadi: ${e.message || 'xato'}`))
     }
     setLoading(false)
   }, [factoryId, fetchShiftInfo, showToast])
 
   const closeShift = useCallback(async () => {
-    if (!factoryId) { showToast('Фискальный модуль не найден'); return }
+    if (!factoryId) { showToast(tr('Фискальный модуль не найден', 'Fiskal modul topilmadi')); return }
     if (unsentItems.some(i => i.status === 'pending' || i.status === 'failed')) {
-      showToast('Сначала отправьте неотправленные чеки')
+      showToast(tr('Сначала отправьте неотправленные чеки', 'Avval yuborilmagan cheklarni yuboring'))
       return
     }
     if (shiftOpen && (!shiftInfo || !shiftInfo.totalSaleCount)) {
-      showToast('Нет зарегистрированных чеков за смену')
+      showToast(tr('Нет зарегистрированных чеков за смену', 'Smenada ro\'yxatga olingan cheklar yo\'q'))
       return
     }
     setLoading(true)
     setError('')
     try {
       await fiscalDriveApi.closeZReport(factoryId, await fdSafeTimeFromFm(factoryId))
-      showToast('Смена закрыта')
+      showToast(tr('Смена закрыта', 'Smena yopiq'))
       doSetShiftOpen(false)
       doSetShiftInfo(null)
     } catch (e: any) {
-      setError(`Не удалось закрыть смену: ${e.message || 'ошибка'}`)
+      setError(tr(`Не удалось закрыть смену: ${e.message || 'ошибка'}`, `Smenani yopishning imkoni bo\'lmadi: ${e.message || 'xato'}`))
     }
     setLoading(false)
   }, [factoryId, unsentItems, shiftOpen, shiftInfo, showToast, doSetShiftInfo, doSetShiftOpen])
 
   const sendUnsentReceipts = useCallback(async () => {
-    if (!factoryId) { showToast('Фискальный модуль не найден'); setLoading(false); return }
+    if (!factoryId) { showToast(tr('Фискальный модуль не найден', 'Fiskal modul topilmadi')); setLoading(false); return }
     setLoading(true)
     let pending = unsentItems.filter(i => i.status === 'pending' || i.status === 'failed')
     let ok = 0, fail = 0
@@ -287,7 +289,7 @@ export default function FiscalModule() {
         saveQueue(pending)
       } catch (e: any) {
         fail++
-        const msg = (e?.message || 'Ошибка').slice(0, 200)
+        const msg = (e?.message || tr('Ошибка', 'Xato')).slice(0, 200)
         pending = pending.map(i => i.id === item.id ? { ...i, status: 'failed' as const, attempts: i.attempts + 1, lastError: msg } : i)
         setUnsentItems(pending)
         saveQueue(pending)
@@ -295,7 +297,7 @@ export default function FiscalModule() {
     }
 
     // 2. Run full batch OFD sync pipeline via Swagger API endpoints
-    showToast('Синхронизация данных с ОФД...')
+    showToast(tr('Синхронизация данных с ОФД...', 'OFD bilan ma\'lumotlar sinxronlashmoqda...'))
     const syncRes = await runFullOfdSync(factoryId)
 
     // 3. Update remaining counts
@@ -303,7 +305,7 @@ export default function FiscalModule() {
 
     const remaining = syncRes.totalRemaining ?? 0
     if (remaining === 0) {
-      showToast('Все чеки успешно отправлены в ОФД!')
+      showToast(tr('Все чеки успешно отправлены в ОФД!', 'Barcha cheklar OFDga muvaffaqiyatli yuborildi!'))
       try {
         const historyRaw = localStorage.getItem('pos_v2_history')
         if (historyRaw) {
@@ -320,12 +322,12 @@ export default function FiscalModule() {
         }
       } catch {}
     } else {
-      showToast(`Ожидают отправки в ОФД: ${remaining} чеков`)
+      showToast(tr(`Ожидают отправки в ОФД: ${remaining} чеков`, `OFDga yuborishni kutyapti: ${remaining} chek`))
     }
 
     if (fail > 0) {
       const firstErr = unsentItems.find(i => i.status === 'failed' || i.status === 'pending')?.lastError
-      showToast(`Не удалось зарегистрировать ${fail} чеков в ФМ${firstErr ? `: ${firstErr}` : ''}`)
+      showToast(tr(`Не удалось зарегистрировать ${fail} чеков в ФМ${firstErr ? `: ${firstErr}` : ''}`, `FM da ${fail} ta chekni ro\'yxatga olish imkoni bo\'lmadi${firstErr ? `: ${firstErr}` : ''}`))
     }
     setLoading(false)
   }, [unsentItems, factoryId, showToast, fetchFmInfo])
@@ -348,7 +350,7 @@ export default function FiscalModule() {
     return () => clearInterval(iv)
   }, [factoryId, fetchFmInfo])
 
-  const today = new Date().toLocaleDateString('ru-RU')
+  const today = new Date().toLocaleDateString(locale())
   const formatSum = (v: number) => (v / 100).toLocaleString('ru-RU', { minimumFractionDigits: 2 })
 
   const localUnsentCount = unsentItems.filter(i => i.status === 'pending' || i.status === 'failed').length
@@ -365,13 +367,13 @@ export default function FiscalModule() {
             <line x1="3" y1="6" x2="21" y2="6" />
             <path d="M16 10a4 4 0 0 1-8 0" />
           </svg>
-          Фискальный модуль
+          {t('Фискальный модуль', 'Fiskal modul')}
         </h1>
       </div>
 
       <div className="fm-toolbar">
         <div className="fm-toolbar-left">
-          <span className="fm-modul-label">Fiscal modul</span>
+          <span className="fm-modul-label">{t('Фискальный модуль', 'Fiskal modul')}</span>
         </div>
         <div className="fm-toolbar-right">
           <div className="fm-date-btn">
@@ -383,7 +385,7 @@ export default function FiscalModule() {
             </svg>
             <span>{today}</span>
           </div>
-          <button className="fm-print-btn" title="Печать">
+          <button className="fm-print-btn" title={t('Печать', 'Chop etish')}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="6 9 6 2 18 2 18 9" />
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -398,20 +400,20 @@ export default function FiscalModule() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
           </svg>
-          Неотправленные чеки
+          {t('Неотправленные чеки', 'Yuborilmagan cheklar')}
           <span className={`fm-badge${badgeCount === 0 ? ' fm-badge-zero' : ''}`}>{badgeCount}</span>
         </button>
         <button className="fm-btn fm-btn-open" onClick={openShift} disabled={loading || shiftOpen}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 18 15 12 9 6" />
           </svg>
-          Открыть смену
+          {t('Открыть смену', 'Smenani ochish')}
         </button>
         <button className="fm-btn fm-btn-close" onClick={closeShift} disabled={loading || !shiftOpen}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="15 18 9 12 15 6" />
           </svg>
-          Закрыть смену
+          {t('Закрыть смену', 'Smenani yopish')}
         </button>
       </div>
 
@@ -421,27 +423,27 @@ export default function FiscalModule() {
         {shiftOpen && shiftInfo ? (
           <div className="fm-shift-info">
             <div className="fm-info-row"><span className="fm-info-label">Terminal ID:</span><span className="fm-info-value">{shiftInfo.terminalId || fmInfo?.TerminalID || fmInfo?.terminalId || '—'}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Raqami:</span><span className="fm-info-value">0</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Cheklar soni:</span><span className="fm-info-value">{shiftInfo.totalSaleCount || 0}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Birinchi savdo cheki:</span><span className="fm-info-value">{shiftInfo.firstReceiptSeq || 0}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Oxirgi savdo cheki:</span><span className="fm-info-value">{shiftInfo.lastReceiptSeq || 0}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Ochish vaqti:</span><span className="fm-info-value">{shiftInfo.openTime || '—'}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Yopish vaqti:</span><span className="fm-info-value">{shiftInfo.closeTime || '—'}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Jami qaytariladigan QQS:</span><span className="fm-info-value">0 so'm</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Qaytarilgan naqd summa:</span><span className="fm-info-value">0 so'm</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Qaytarilgan naqdsiz summa:</span><span className="fm-info-value">0 so'm</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Qaytarilganlar soni:</span><span className="fm-info-value">0</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Jami QQS sotuvdan:</span><span className="fm-info-value">{formatSum(shiftInfo.totalVAT?.Sale || 0)} so'm</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Jami naqd sotuvlar:</span><span className="fm-info-value">{formatSum(shiftInfo.totalCash?.Sale || 0)} so'm</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Jami naqdsiz sotuvlar:</span><span className="fm-info-value">{formatSum(shiftInfo.totalCard?.Sale || 0)} so'm</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Jami sotuvlar soni:</span><span className="fm-info-value">{shiftInfo.totalSaleCount || 0}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Номер смены:', 'Smena raqami:')}</span><span className="fm-info-value">0</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Количество чеков:', 'Cheklar soni:')}</span><span className="fm-info-value">{shiftInfo.totalSaleCount || 0}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Первый чек продажи:', 'Birinchi savdo cheki:')}</span><span className="fm-info-value">{shiftInfo.firstReceiptSeq || 0}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Последний чек продажи:', 'Oxirgi savdo cheki:')}</span><span className="fm-info-value">{shiftInfo.lastReceiptSeq || 0}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Время открытия:', 'Ochilish vaqti:')}</span><span className="fm-info-value">{shiftInfo.openTime || '—'}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Время закрытия:', 'Yopish vaqti:')}</span><span className="fm-info-value">{shiftInfo.closeTime || '—'}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Всего возвращаемый QQS:', 'Jami qaytariladigan QQS:')}</span><span className="fm-info-value">{t('0 сум', '0 so\'m')}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Возвращённая наличными сумма:', 'Qaytarilgan naqd summa:')}</span><span className="fm-info-value">{t('0 сум', '0 so\'m')}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Возвращённая безналичная сумма:', 'Qaytarilgan naqdsiz summa:')}</span><span className="fm-info-value">{t('0 сум', '0 so\'m')}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Количество возвратов:', 'Qaytarilganlar soni:')}</span><span className="fm-info-value">0</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Всего QQS с продаж:', 'Jami QQS sotuvdan:')}</span><span className="fm-info-value">{formatSum(shiftInfo.totalVAT?.Sale || 0)} {t('сум', 'so\'m')}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Всего наличные продажи:', 'Jami naqd sotuvlar:')}</span><span className="fm-info-value">{formatSum(shiftInfo.totalCash?.Sale || 0)} {t('сум', 'so\'m')}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Всего безналичные продажи:', 'Jami naqdsiz sotuvlar:')}</span><span className="fm-info-value">{formatSum(shiftInfo.totalCard?.Sale || 0)} {t('сум', 'so\'m')}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Всего продаж:', 'Jami sotuvlar soni:')}</span><span className="fm-info-value">{shiftInfo.totalSaleCount || 0}</span></div>
             <div className="fm-info-row"><span className="fm-info-label">Applet version:</span><span className="fm-info-value">{fmInfo?.AppletVersion || fmInfo?.appletVersion || '0400'}</span></div>
           </div>
         ) : (
           <div className="fm-shift-info">
             <div className="fm-info-row"><span className="fm-info-label">Terminal ID:</span><span className="fm-info-value">{fmInfo?.TerminalID || fmInfo?.terminalId || '—'}</span></div>
             <div className="fm-info-row"><span className="fm-info-label">Applet version:</span><span className="fm-info-value">{fmInfo?.AppletVersion || fmInfo?.appletVersion || '0400'}</span></div>
-            <div className="fm-info-row"><span className="fm-info-label">Статус:</span><span className="fm-info-value" style={{ color: shiftOpen ? '#22c55e' : '#ef4444' }}>{shiftOpen ? 'Смена открыта' : 'Смена закрыта'}</span></div>
+            <div className="fm-info-row"><span className="fm-info-label">{t('Статус:', 'Holat:')}</span><span className="fm-info-value" style={{ color: shiftOpen ? '#22c55e' : '#ef4444' }}>{shiftOpen ? t('Смена открыта', 'Smena ochiq') : t('Смена закрыта', 'Smena yopiq')}</span></div>
           </div>
         )}
       </div>

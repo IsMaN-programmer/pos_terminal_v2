@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useT, tr } from '../i18n'
 
 interface PrintLoadingModalProps {
   task: () => Promise<void>
@@ -8,6 +9,7 @@ interface PrintLoadingModalProps {
 }
 
 export default function PrintLoadingModal({ task, onComplete, loadingLabel, doneLabel }: PrintLoadingModalProps) {
+  const t = useT()
   const [state, setState] = useState<'loading' | 'done'>('loading')
   const startedRef = useRef(false)
 
@@ -17,7 +19,7 @@ export default function PrintLoadingModal({ task, onComplete, loadingLabel, done
     task()
       .catch(e => {
         console.error('Ошибка при создании чека:', e)
-        alert('Ошибка: ' + (e instanceof Error ? e.message : 'неизвестная ошибка'))
+        alert(tr('Ошибка: ' + (e instanceof Error ? e.message : 'неизвестная ошибка'), 'Xato: ' + (e instanceof Error ? e.message : "noma'lum xato")))
       })
       .then(() => {
         setState('done')
@@ -38,7 +40,7 @@ export default function PrintLoadingModal({ task, onComplete, loadingLabel, done
           </div>
         )}
         <div className="print-loading-label">
-          {state === 'loading' ? (loadingLabel || 'Создание чека...') : (doneLabel || 'Чек готов')}
+          {state === 'loading' ? (loadingLabel || t('Создание чека...', 'Chek yaratilmoqda...')) : (doneLabel || t('Чек готов', 'Chek tayyor'))}
         </div>
       </div>
     </div>

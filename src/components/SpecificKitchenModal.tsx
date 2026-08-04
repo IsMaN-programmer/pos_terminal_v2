@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { KitchenItem } from '../data/types'
 import { getConnectedPrinters } from '../utils/printService'
+import { useT } from '../i18n'
 function getPhoto(name: string): string | undefined {
   try {
     const raw = localStorage.getItem('pos_v2_menu')
@@ -26,6 +27,7 @@ interface SpecificKitchenModalProps {
 export default function SpecificKitchenModal({
   items, kitchenName, onPrint, onBack,
 }: SpecificKitchenModalProps) {
+  const t = useT()
   const [step, setStep] = useState<Step>('select')
   const [selected, setSelected] = useState<Set<number>>(new Set(items.map(i => i.id)))
   const [printer, setPrinter] = useState<string>(localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY) || '')
@@ -75,7 +77,7 @@ export default function SpecificKitchenModal({
           <>
             <div className="skm-header">
               <h3 className="skm-title">{kitchenName}</h3>
-              <p className="skm-subtitle">Выберите блюда для отправки</p>
+              <p className="skm-subtitle">{t('Выберите блюда для отправки', "Yuborish uchun taomlarni tanlang")}</p>
             </div>
             <div className="skm-body">
               <div className="skm-items-list">
@@ -107,13 +109,13 @@ export default function SpecificKitchenModal({
               </div>
             </div>
             <div className="skm-actions">
-              <button className="skm-btn back" onClick={onBack}>Отмена</button>
+              <button className="skm-btn back" onClick={onBack}>{t('Отмена', 'Bekor qilish')}</button>
               <button
                 className="skm-btn primary"
                 onClick={handleConfirmSelection}
                 disabled={selected.size === 0}
               >
-                Далее
+                {t('Далее', 'Keyingi')}
               </button>
             </div>
           </>
@@ -122,20 +124,20 @@ export default function SpecificKitchenModal({
         {step === 'printer' && (
           <>
             <div className="skm-header">
-              <h3 className="skm-title">Выбор принтера</h3>
-              <p className="skm-subtitle">На каком принтере печатать чек?</p>
+              <h3 className="skm-title">{t('Выбор принтера', 'Printerni tanlash')}</h3>
+              <p className="skm-subtitle">{t('На каком принтере печатать чек?', 'Chek qaysi printerda chop etiladi?')}</p>
             </div>
             <div className="skm-body">
               <div className="skm-printer-block">
                 <div className="skm-printer-group">
-                  <label>Принтер</label>
+                  <label>{t('Принтер', 'Printer')}</label>
                   <select className="admin-settings-printer-select" value={printer} onChange={e => setPrinter(e.target.value)}>
-                    <option value="">— Выберите принтер —</option>
+                    <option value="">{t('— Выберите принтер —', '— Printerni tanlang —')}</option>
                     {printers.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div className="skm-printer-group">
-                  <label>Формат бумаги</label>
+                  <label>{t('Формат бумаги', "Qog'oz formati")}</label>
                   <select className="admin-settings-printer-select" value={paperSize} onChange={e => setPaperSize(e.target.value)}>
                     <option value="58">58 мм</option>
                     <option value="80">80 мм</option>
@@ -143,17 +145,17 @@ export default function SpecificKitchenModal({
                 </div>
               </div>
               <div className="skm-summary">
-                Будет напечатано блюд: <b>{selectedItems.length}</b>
+                {t('Будет напечатано блюд:', 'Chop etiladigan taomlar:')} <b>{selectedItems.length}</b>
               </div>
             </div>
             <div className="skm-actions">
-              <button className="skm-btn back" onClick={() => setStep('select')}>Назад</button>
+              <button className="skm-btn back" onClick={() => setStep('select')}>{t('Назад', 'Orqaga')}</button>
               <button
                 className="skm-btn primary"
                 onClick={handleConfirmPrinter}
                 disabled={!printer}
               >
-                Печатать
+                {t('Печатать', 'Chop etish')}
               </button>
             </div>
           </>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { fiscalDriveApi } from './services/fiscalDriveApi'
 import { fetchAndStoreCompanyData } from './utils/companyInfo'
+import { useT } from './i18n'
 
 interface LoginProps {
   onLogin: (user: { username: string; role: string; fmFactoryId?: string; fmTerminalId?: string }) => void
@@ -14,6 +15,7 @@ interface FiscalModule {
 }
 
 export default function Login({ onLogin }: LoginProps) {
+  const t = useT()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -30,7 +32,7 @@ export default function Login({ onLogin }: LoginProps) {
 
   async function detectFiscalModules() {
     setFmStatus('checking')
-    setFmHint('Поиск модулей...')
+    setFmHint(t('Поиск модулей...', 'Modullar qidirilmoqda...'))
     try {
       const data = await fiscalDriveApi.listFiscalDrives()
       let list = Array.isArray(data) ? data : (Array.isArray((data as any)?.data) ? (data as any).data : [])
@@ -39,7 +41,7 @@ export default function Login({ onLogin }: LoginProps) {
         setModules([])
         setSelectedModule('')
         setFmStatus('empty')
-        setFmHint('Подключите фискальный модуль к USB')
+        setFmHint(t('Подключите фискальный модуль к USB', 'Fiskal modulni USB-ga ulang'))
         return
       }
 
@@ -63,7 +65,7 @@ export default function Login({ onLogin }: LoginProps) {
 
       setModules(fmList)
       setFmStatus('found')
-      setFmHint(`Найдено модулей: ${fmList.length}`)
+      setFmHint(`${t('Найдено модулей', 'Modullar topildi')}: ${fmList.length}`)
 
       if (fmList.length > 0) {
         setSelectedModule(fmList[0].factoryId)
@@ -72,7 +74,7 @@ export default function Login({ onLogin }: LoginProps) {
       setModules([])
       setSelectedModule('')
       setFmStatus('empty')
-      setFmHint('Подключите фискальный модуль к USB')
+      setFmHint(t('Подключите фискальный модуль к USB', 'Fiskal modulni USB-ga ulang'))
     }
   }
 
@@ -81,7 +83,7 @@ export default function Login({ onLogin }: LoginProps) {
     setError('')
 
     if (!username || !password) {
-      setError('Введите логин и пароль')
+      setError(t('Введите логин и пароль', 'Login va parolni kiriting'))
       return
     }
 
@@ -95,14 +97,14 @@ export default function Login({ onLogin }: LoginProps) {
         body: JSON.stringify({ username, password, terminalId, versionKey })
       })
       if (!authRes.ok) {
-        setError('Неверный логин или пароль')
+        setError(t('Неверный логин или пароль', 'Login yoki parol noto\'g\'ri'))
         setLoading(false)
         return
       }
       const authJson = await authRes.json()
       const token = authJson?.data?.token || authJson?.token || ''
       if (!token) {
-        setError('Неверный логин или пароль')
+        setError(t('Неверный логин или пароль', 'Login yoki parol noto\'g\'ri'))
         setLoading(false)
         return
       }
@@ -122,7 +124,7 @@ export default function Login({ onLogin }: LoginProps) {
         fmTerminalId: terminalId,
       }), 200)
     } catch {
-      setError('Неверный логин или пароль')
+      setError(t('Неверный логин или пароль', 'Login yoki parol noto\'g\'ri'))
       setLoading(false)
     }
   }
@@ -145,50 +147,50 @@ export default function Login({ onLogin }: LoginProps) {
             <div className="login-left-title">POS Terminal</div>
             <div className="login-left-subtitle">Virtual kassa v2</div>
             <div className="login-left-desc">
-              Приложение для управления продажами и заказами в ресторане
+              {t('Приложение для управления продажами и заказами в ресторане', 'Restorandagi savdo va buyurtmalarni boshqarish uchun ilova')}
             </div>
             <div className="login-left-features">
               <div className="login-feature">
-                <span className="login-feature-icon">→</span> Быстрая регистрация заказов
+                <span className="login-feature-icon">→</span> {t('Быстрая регистрация заказов', 'Buyurtmalarni tez ro\'yxatdan o\'tkazish')}
               </div>
               <div className="login-feature">
-                <span className="login-feature-icon">→</span> Управление меню и столами
+                <span className="login-feature-icon">→</span> {t('Управление меню и столами', 'Menyu va stollarni boshqarish')}
               </div>
               <div className="login-feature">
-                <span className="login-feature-icon">→</span> Печать чеков и отчёты
+                <span className="login-feature-icon">→</span> {t('Печать чеков и отчёты', 'Cheklarni chop etish va hisobotlar')}
               </div>
             </div>
           </div>
         </div>
         <div className="login-right">
           <div className="login-card">
-            <div className="login-card-title">Вход в систему</div>
-            <div className="login-card-subtitle">Введите логин и пароль</div>
+            <div className="login-card-title">{t('Вход в систему', 'Tizimga kirish')}</div>
+            <div className="login-card-subtitle">{t('Введите логин и пароль', 'Login va parolni kiriting')}</div>
 
             {error && <div className="login-error">{error}</div>}
 
             <form onSubmit={handleLogin}>
               <div className="login-field">
-                <label className="login-label" htmlFor="login-username">Логин</label>
+                <label className="login-label" htmlFor="login-username">{t('Логин', 'Login')}</label>
                 <input
                   id="login-username"
                   type="text"
                   className="login-input"
-                  placeholder="Введите логин"
+                  placeholder={t('Введите логин', 'Loginni kiriting')}
                   value={username}
                   onChange={e => setUsername(e.target.value)}
                   autoComplete="off"
                 />
               </div>
               <div className="login-field">
-                <label className="login-label" htmlFor="login-password">Пароль</label>
+                <label className="login-label" htmlFor="login-password">{t('Пароль', 'Parol')}</label>
                 <div style={{ position: 'relative' }}>
                   <input
                     id="login-password"
                     type={showPassword ? 'text' : 'password'}
                     className="login-input"
                     style={{ paddingRight: 40 }}
-                    placeholder="Введите пароль"
+                    placeholder={t('Введите пароль', 'Parolni kiriting')}
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                   />
@@ -213,7 +215,7 @@ export default function Login({ onLogin }: LoginProps) {
               </div>
 
               <div className="login-field">
-                <label className="login-label" htmlFor="login-fm">Фискальный модуль</label>
+                <label className="login-label" htmlFor="login-fm">{t('Фискальный модуль', 'Fiskal modul')}</label>
                 <div className="login-input-group">
                   <select
                     id="login-fm"
@@ -223,10 +225,10 @@ export default function Login({ onLogin }: LoginProps) {
                     disabled={fmStatus === 'checking'}
                   >
                     {fmStatus === 'checking' && (
-                      <option value="">Поиск модулей...</option>
+                      <option value="">{t('Поиск модулей...', 'Modullar qidirilmoqda...')}</option>
                     )}
                     {fmStatus === 'empty' && (
-                      <option value="">Фискальные модули не найдены</option>
+                      <option value="">{t('Фискальные модули не найдены', 'Fiskal modullar topilmadi')}</option>
                     )}
                     {modules.map(m => (
                       <option key={m.factoryId} value={m.factoryId}>
@@ -238,7 +240,7 @@ export default function Login({ onLogin }: LoginProps) {
                     type="button"
                     className="login-input-btn"
                     onClick={detectFiscalModules}
-                    title="Обновить список модулей"
+                    title={t('Обновить список модулей', 'Modullar ro\'yxatini yangilash')}
                   >
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="23 4 23 10 17 10" />
@@ -249,20 +251,20 @@ export default function Login({ onLogin }: LoginProps) {
                 </div>
                 {fmStatus === 'empty' && (
                   <div className="login-field-hint login-field-hint-warn">
-                    Подключите фискальный модуль к USB
+                    {t('Подключите фискальный модуль к USB', 'Fiskal modulni USB-ga ulang')}
                   </div>
                 )}
                 {fmStatus === 'found' && fmHint && (
                   <div className="login-field-hint">{fmHint}</div>
                 )}
                 {fmStatus === 'checking' && (
-                  <div className="login-field-hint">Поиск модулей...</div>
+                  <div className="login-field-hint">{t('Поиск модулей...', 'Modullar qidirilmoqda...')}</div>
                 )}
 
               </div>
 
               <button type="submit" className="login-btn" disabled={loading}>
-                {loading ? 'Вход...' : 'Войти'}
+                {loading ? t('Вход...', 'Kirilmoqda...') : t('Войти', 'Kirish')}
               </button>
             </form>
           </div>

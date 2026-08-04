@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import type { OrderItem } from '../data/types'
+import { useT, tr, locale } from '../i18n'
 
 export interface CashierPaymentData {
   items: OrderItem[]
@@ -55,6 +56,8 @@ export default function CashierPayment({
   const [splitError, setSplitError] = useState('')
   const [toast, setToast] = useState<string | null>(null)
 
+  const t = useT()
+
   const showToast = useCallback((msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 2000)
@@ -69,8 +72,8 @@ export default function CashierPayment({
   const итого = qqsBase
 
   const now = new Date()
-  const dateStr = now.toLocaleDateString('ru-RU')
-  const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const dateStr = now.toLocaleDateString(locale())
+  const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
 
   function openModal(type: ActiveModal) {
     setTempDiscountType(discountType)
@@ -102,7 +105,7 @@ export default function CashierPayment({
       onDiscountAmountChange(0)
       setActiveModal(null)
       setPromoError(false)
-      showToast('Промокод успешно добавлен')
+      showToast(tr('Промокод успешно добавлен', "Promokod muvaffaqiyatli qo'shildi"))
     } else {
       setPromoError(true)
     }
@@ -116,7 +119,7 @@ export default function CashierPayment({
   function applySplit() {
     const total = tempSplitCash + tempSplitCard + tempSplitClick
     if (total !== итого) {
-      setSplitError(`Общая сумма разделения (${total.toLocaleString()} сум) не равна итого (${итого.toLocaleString()} сум)`)
+      setSplitError(tr(`Общая сумма разделения (${total.toLocaleString()} сум) не равна итого (${итого.toLocaleString()} сум)`, `Bo'lish summasi (${total.toLocaleString()} so'm) jami (${итого.toLocaleString()} so'm)ga teng emas`))
       return
     }
     onSplitAmountsChange({ cash: tempSplitCash, card: tempSplitCard, click: tempSplitClick })
@@ -138,21 +141,21 @@ export default function CashierPayment({
             <path d="M2 12h20" />
             <path d="M12 18h0" />
           </svg>
-          Прием оплаты
+          {t('Прием оплаты', "To'lovni qabul qilish")}
         </h1>
         <div className="menu-header-btns">
-          <button className="menu-header-btn back" onClick={onBack}>Назад</button>
+          <button className="menu-header-btn back" onClick={onBack}>{t('Назад', 'Orqaga')}</button>
           <button className={`menu-header-btn continue${!selectedMethod && !splitAmounts ? ' disabled' : ''}`} disabled={!selectedMethod && !splitAmounts} onClick={() => onContinue({
             items, tableName, guestCount, servicePercent,
             discountType, discountPercent, discountAmount, selectedMethod,
             splitAmounts: splitAmounts || undefined,
-          })}>Продолжить</button>
+          })}>{t('Продолжить', 'Davom etish')}</button>
         </div>
       </div>
 
       <div className="order-info-bar">
         <div className="order-info-item">
-          <span className="order-info-label">Стол:</span>
+          <span className="order-info-label">{t('Стол:', 'Stol:')}</span>
           <span className="order-info-value">{tableName}</span>
         </div>
         <div className="order-info-item">
@@ -161,7 +164,7 @@ export default function CashierPayment({
             <circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span>{guestCount} чел.</span>
+          <span>{guestCount} {t('чел.', 'kishi')}</span>
         </div>
         <div className="order-info-item">
           <span>{dateStr}</span>
@@ -173,29 +176,29 @@ export default function CashierPayment({
         <div className="cashier-payment-left">
           <div className="payment-summary-box">
             <div className="payment-summary-inner">
-              <h3 className="payment-summary-title">Сумма платежа</h3>
+              <h3 className="payment-summary-title">{t('Сумма платежа', "To'lov summasi")}</h3>
               <div className="payment-summary-rows">
                 <div className="payment-summary-row">
-                  <span className="ps-label">Общая сумма</span>
-                  <span className="ps-value">{totalSum.toLocaleString()} сум</span>
+                  <span className="ps-label">{t('Общая сумма', 'Umumiy summa')}</span>
+                  <span className="ps-value">{totalSum.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
                 <div className="payment-summary-row">
-                  <span className="ps-label">Сервис ({servicePercent}%)</span>
-                  <span className="ps-value">{serviceAmount.toLocaleString()} сум</span>
+                  <span className="ps-label">{t(`Сервис (${servicePercent}%)`, `Xizmat (${servicePercent}%)`)}</span>
+                  <span className="ps-value">{serviceAmount.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
                 <div className="payment-summary-row">
-                  <span className="ps-label">Скидка</span>
-                  <span className={`ps-value${discountValue > 0 ? ' ps-negative' : ''}`}>{discountValue > 0 ? `−${discountValue.toLocaleString()}` : '0'} сум</span>
+                  <span className="ps-label">{t('Скидка', 'Chegirma')}</span>
+                  <span className={`ps-value${discountValue > 0 ? ' ps-negative' : ''}`}>{discountValue > 0 ? `−${discountValue.toLocaleString()}` : '0'} {t('сум', "so'm")}</span>
                 </div>
                 <div className="payment-summary-row">
                   <span className="ps-label">QQS (12%)</span>
-                  <span className="ps-value">{qqsAmount.toLocaleString()} сум</span>
+                  <span className="ps-value">{qqsAmount.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
               </div>
               <div className="payment-summary-divider" />
               <div className="payment-summary-total">
-                <span className="pst-label">Итого</span>
-                <span className="pst-value">{итого.toLocaleString()} сум</span>
+                <span className="pst-label">{t('Итого', 'Jami')}</span>
+                <span className="pst-value">{итого.toLocaleString()} {t('сум', "so'm")}</span>
               </div>
             </div>
           </div>
@@ -205,31 +208,31 @@ export default function CashierPayment({
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18" /><circle cx="8" cy="8" r="1.5" fill="currentColor" /><circle cx="16" cy="16" r="1.5" fill="currentColor" />
               </svg>
-              Скидка
+              {t('Скидка', 'Chegirma')}
             </button>
             <button className="payment-action-btn" onClick={() => openModal('promo')}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="20 12 20 22 4 22 4 12" /><rect x="2" y="7" width="20" height="5" /><line x1="12" y1="22" x2="12" y2="7" /><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" /><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
               </svg>
-              Промокод
+              {t('Промокод', 'Promokod')}
             </button>
             <button className="payment-action-btn" onClick={() => openModal('service')}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
-              Сервис
+              {t('Сервис', 'Xizmat')}
             </button>
           </div>
           <button className={`payment-action-btn split-btn${splitAmounts ? ' active' : ''}`} onClick={() => splitAmounts ? clearSplit() : openModal('split')}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="2" x2="12" y2="22" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
-            Разделение счета
+            {t('Разделение счета', "Hisobni bo'lish")}
           </button>
         </div>
 
         <div className="cashier-payment-right">
-          <h3 className="payment-methods-title">{splitAmounts ? 'Разделение счета' : 'Выбор оплаты'}</h3>
+          <h3 className="payment-methods-title">{splitAmounts ? t('Разделение счета', "Hisobni bo'lish") : t('Выбор оплаты', "To'lov usuli")}</h3>
           <div className="payment-methods">
             {splitAmounts ? (
               <>
@@ -237,22 +240,22 @@ export default function CashierPayment({
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" />
                   </svg>
-                  <span className="pm-label">Наличной</span>
-                  <span className="pm-amount">{splitAmounts.cash.toLocaleString()} сум</span>
+                  <span className="pm-label">{t('Наличной', 'Naqd')}</span>
+                  <span className="pm-amount">{splitAmounts.cash.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
                 <div className="payment-method-box selected">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
-                  <span className="pm-label">Карта</span>
-                  <span className="pm-amount">{splitAmounts.card.toLocaleString()} сум</span>
+                  <span className="pm-label">{t('Карта', 'Karta')}</span>
+                  <span className="pm-amount">{splitAmounts.card.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
                 <div className="payment-method-box selected">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
-                  <span className="pm-label">Click/Payme</span>
-                  <span className="pm-amount">{splitAmounts.click.toLocaleString()} сум</span>
+                  <span className="pm-label">{t('Другое', 'Boshqa')}</span>
+                  <span className="pm-amount">{splitAmounts.click.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
               </>
             ) : (
@@ -261,19 +264,19 @@ export default function CashierPayment({
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" />
                   </svg>
-                  <span className="pm-label">Наличной</span>
+                  <span className="pm-label">{t('Наличной', 'Naqd')}</span>
                 </div>
                 <div className={`payment-method-box${selectedMethod === 'card' ? ' selected' : ''}`} onClick={() => onSelectedMethodChange('card')}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
-                  <span className="pm-label">Карта</span>
+                  <span className="pm-label">{t('Карта', 'Karta')}</span>
                 </div>
                 <div className={`payment-method-box${selectedMethod === 'click' ? ' selected' : ''}`} onClick={() => onSelectedMethodChange('click')}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
-                  <span className="pm-label">Click/Payme</span>
+                  <span className="pm-label">{t('Другое', 'Boshqa')}</span>
                 </div>
               </>
             )}
@@ -284,19 +287,19 @@ export default function CashierPayment({
       {activeModal === 'discount' && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Скидка</h3>
+            <h3 className="modal-title">{t('Скидка', 'Chegirma')}</h3>
             <div className="discount-toggle">
-              <button className={`dt-btn${tempDiscountType === 'percent' ? ' active' : ''}`} onClick={() => setTempDiscountType('percent')}>Процент</button>
-              <button className={`dt-btn${tempDiscountType === 'amount' ? ' active' : ''}`} onClick={() => setTempDiscountType('amount')}>Сумма</button>
+              <button className={`dt-btn${tempDiscountType === 'percent' ? ' active' : ''}`} onClick={() => setTempDiscountType('percent')}>{t('Процент', 'Foiz')}</button>
+              <button className={`dt-btn${tempDiscountType === 'amount' ? ' active' : ''}`} onClick={() => setTempDiscountType('amount')}>{t('Сумма', 'Summa')}</button>
             </div>
             {tempDiscountType === 'percent' ? (
-              <input type="number" className="modal-input" placeholder="Процент..." value={tempDiscountPercent || ''} onChange={e => setTempDiscountPercent(Number(e.target.value) || 0)} />
+              <input type="number" className="modal-input" placeholder={t('Процент...', 'Foiz...')} value={tempDiscountPercent || ''} onChange={e => setTempDiscountPercent(Number(e.target.value) || 0)} />
             ) : (
-              <input type="number" className="modal-input" placeholder="Сумма..." value={tempDiscountAmount || ''} onChange={e => setTempDiscountAmount(Number(e.target.value) || 0)} />
+              <input type="number" className="modal-input" placeholder={t('Сумма...', 'Summa...')} value={tempDiscountAmount || ''} onChange={e => setTempDiscountAmount(Number(e.target.value) || 0)} />
             )}
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>Назад</button>
-              <button className="modal-btn save" onClick={applyDiscount}>Применить</button>
+              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn save" onClick={applyDiscount}>{t('Применить', "Qo'llash")}</button>
             </div>
           </div>
         </div>
@@ -305,12 +308,12 @@ export default function CashierPayment({
       {activeModal === 'promo' && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Промокод</h3>
-            <input type="text" className="modal-input" placeholder="Введите промокод..." value={tempPromoCode} onChange={e => setTempPromoCode(e.target.value)} />
-            {promoError && <div className="promo-error">Такого промокода нету</div>}
+            <h3 className="modal-title">{t('Промокод', 'Promokod')}</h3>
+            <input type="text" className="modal-input" placeholder={t('Введите промокод...', 'Promokodni kiriting...')} value={tempPromoCode} onChange={e => setTempPromoCode(e.target.value)} />
+            {promoError && <div className="promo-error">{t('Такого промокода нету', 'Bunday promokod mavjud emas')}</div>}
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>Назад</button>
-              <button className="modal-btn save" onClick={applyPromo}>Применить</button>
+              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn save" onClick={applyPromo}>{t('Применить', "Qo'llash")}</button>
             </div>
           </div>
         </div>
@@ -319,13 +322,13 @@ export default function CashierPayment({
       {activeModal === 'split' && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Разделение счета</h3>
+            <h3 className="modal-title">{t('Разделение счета', "Hisobni bo'lish")}</h3>
             <div className="split-input-group">
               <label className="split-label">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" />
                 </svg>
-                Наличные
+                {t('Наличные', 'Naqd')}
               </label>
               <input type="number" className="modal-input" placeholder="0" value={tempSplitCash || ''} onChange={e => { setTempSplitCash(Number(e.target.value) || 0); setSplitError('') }} />
             </div>
@@ -334,7 +337,7 @@ export default function CashierPayment({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                 </svg>
-                Карта
+                {t('Карта', 'Karta')}
               </label>
               <input type="number" className="modal-input" placeholder="0" value={tempSplitCard || ''} onChange={e => { setTempSplitCard(Number(e.target.value) || 0); setSplitError('') }} />
             </div>
@@ -343,17 +346,17 @@ export default function CashierPayment({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                 </svg>
-                Click/Payme
+                {t('Другое', 'Boshqa')}
               </label>
               <input type="number" className="modal-input" placeholder="0" value={tempSplitClick || ''} onChange={e => { setTempSplitClick(Number(e.target.value) || 0); setSplitError('') }} />
             </div>
             <div className="split-total-info">
-              Итого: {(tempSplitCash + tempSplitCard + tempSplitClick).toLocaleString()} / {итого.toLocaleString()} сум
+              {t('Итого:', 'Jami:')} {(tempSplitCash + tempSplitCard + tempSplitClick).toLocaleString()} / {итого.toLocaleString()} {t('сум', "so'm")}
             </div>
             {splitError && <div className="promo-error">{splitError}</div>}
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>Назад</button>
-              <button className="modal-btn save" onClick={applySplit}>Применить</button>
+              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn save" onClick={applySplit}>{t('Применить', "Qo'llash")}</button>
             </div>
           </div>
         </div>
@@ -362,11 +365,11 @@ export default function CashierPayment({
       {activeModal === 'service' && (
         <div className="modal-overlay" onClick={() => setActiveModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Сервис</h3>
-            <input type="number" className="modal-input" placeholder="Процент..." value={tempServicePercent || ''} onChange={e => setTempServicePercent(Number(e.target.value) || 0)} />
+            <h3 className="modal-title">{t('Сервис', 'Xizmat')}</h3>
+            <input type="number" className="modal-input" placeholder={t('Процент...', 'Foiz...')} value={tempServicePercent || ''} onChange={e => setTempServicePercent(Number(e.target.value) || 0)} />
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>Назад</button>
-              <button className="modal-btn save" onClick={applyService}>Применить</button>
+              <button className="modal-btn cancel" onClick={() => setActiveModal(null)}>{t('Назад', 'Orqaga')}</button>
+              <button className="modal-btn save" onClick={applyService}>{t('Применить', "Qo'llash")}</button>
             </div>
           </div>
         </div>

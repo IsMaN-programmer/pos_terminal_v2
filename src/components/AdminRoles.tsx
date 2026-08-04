@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { StaffRecord } from '../data/types'
+import { useT } from '../i18n'
 
 const STORAGE_KEY = 'pos_v2_staff'
 
@@ -16,9 +17,10 @@ function saveStaff(list: StaffRecord[]) {
 }
 
 const ROLES = ['Все', 'waiter', 'cashier', 'admin']
-const ROLE_LABELS: Record<string, string> = { waiter: 'Официант', cashier: 'Кассир', admin: 'Администратор' }
 
 export default function AdminRoles() {
+  const t = useT()
+  const roleLabels: Record<string, string> = { waiter: t('Официант', 'Ofitsiant'), cashier: t('Кассир', 'Kassir'), admin: t('Администратор', 'Administrator') }
   const [staff, setStaff] = useState<StaffRecord[]>(loadStaff)
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('Все')
@@ -61,7 +63,7 @@ export default function AdminRoles() {
   return (
     <div className="screen admin-roles">
       <div className="screen-header">
-        <h1 className="screen-title">Управление ролей</h1>
+        <h1 className="screen-title">{t('Управление ролей', 'Rollar boshqaruvi')}</h1>
       </div>
 
       <div className="ar-toolbar">
@@ -70,24 +72,24 @@ export default function AdminRoles() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <input type="text" placeholder="Поиск по имени..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input type="text" placeholder={t('Поиск по имени...', "Ism bo'yicha qidirish...")} value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="toolbar-select" value={roleFilter} onChange={e => setRoleFilter(e.target.value)} style={{ minWidth: 160 }}>
-            {ROLES.map(r => <option key={r} value={r}>{r === 'Все' ? 'Все' : ROLE_LABELS[r]}</option>)}
+            {ROLES.map(r => <option key={r} value={r}>{r === 'Все' ? t('Все', 'Barchasi') : roleLabels[r]}</option>)}
           </select>
         </div>
-        <button className="ar-add-btn" onClick={openAdd}>+ Добавить роль</button>
+        <button className="ar-add-btn" onClick={openAdd}>+ {t('Добавить роль', "Rol qo'shish")}</button>
       </div>
 
       <div className="ar-table-wrap">
         <table className="ar-table">
           <thead>
             <tr>
-              <th>Имя</th>
-              <th>Пин код</th>
-              <th>Роль</th>
-              <th>Телефон</th>
-              <th>Настройки</th>
+              <th>{t('Имя', 'Ism')}</th>
+              <th>{t('Пин код', 'PIN kod')}</th>
+              <th>{t('Роль', 'Rol')}</th>
+              <th>{t('Телефон', 'Telefon')}</th>
+              <th>{t('Настройки', 'Sozlamalar')}</th>
             </tr>
           </thead>
           <tbody>
@@ -95,17 +97,17 @@ export default function AdminRoles() {
               <tr key={s.id}>
                 <td className="ar-table-name">{s.name}</td>
                 <td className="ar-table-pin">{s.pin}</td>
-                <td><span className={`ar-role-badge ar-role-${s.role}`}>{ROLE_LABELS[s.role] || s.role}</span></td>
+                <td><span className={`ar-role-badge ar-role-${s.role}`}>{roleLabels[s.role] || s.role}</span></td>
                 <td className="ar-table-phone">{s.phone || '—'}</td>
                 <td>
                   <div className="ar-table-actions">
-                    <button className="ab-action-btn" title="Изменить" onClick={() => openEdit(s)}>
+                    <button className="ab-action-btn" title={t('Изменить', "O'zgartirish")} onClick={() => openEdit(s)}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
                     </button>
-                    <button className="ab-action-btn ab-action-delete" title="Удалить" onClick={() => handleDelete(s.id)}>
+                    <button className="ab-action-btn ab-action-delete" title={t('Удалить', "O'chirish")} onClick={() => handleDelete(s.id)}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -117,30 +119,30 @@ export default function AdminRoles() {
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && <div className="ar-empty">Сотрудники не найдены</div>}
+        {filtered.length === 0 && <div className="ar-empty">{t('Сотрудники не найдены', 'Xodimlar topilmadi')}</div>}
       </div>
 
       {modal && (
         <div className="modal-overlay" onClick={() => setModal(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div className="modal-title">{modal.item ? 'Изменить роль' : 'Добавить роль'}</div>
+            <div className="modal-title">{modal.item ? t('Изменить роль', 'Rolni o\'zgartirish') : t('Добавить роль', "Rol qo'shish")}</div>
             <div className="ar-form">
-              <label className="ab-form-label">Роль</label>
+              <label className="ab-form-label">{t('Роль', 'Rol')}</label>
               <select className="toolbar-select" value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} style={{ width: '100%' }}>
-                <option value="waiter">Официант</option>
-                <option value="cashier">Кассир</option>
-                <option value="admin">Администратор</option>
+                <option value="waiter">{t('Официант', 'Ofitsiant')}</option>
+                <option value="cashier">{t('Кассир', 'Kassir')}</option>
+                <option value="admin">{t('Администратор', 'Administrator')}</option>
               </select>
-              <label className="ab-form-label">Имя</label>
-              <input className="modal-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Имя сотрудника" />
-              <label className="ab-form-label">Пароль (PIN-код)</label>
-              <input className="modal-input" value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value.slice(0, 4) }))} placeholder="4-значный PIN" maxLength={4} type="password" inputMode="numeric" />
-              <label className="ab-form-label">Телефон</label>
-              <input className="modal-input" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="Номер телефона" />
+              <label className="ab-form-label">{t('Имя', 'Ism')}</label>
+              <input className="modal-input" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder={t('Имя сотрудника', 'Xodim ismi')} />
+              <label className="ab-form-label">{t('Пароль (PIN-код)', 'Parol (PIN-kod)')}</label>
+              <input className="modal-input" value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value.slice(0, 4) }))} placeholder={t('4-значный PIN', "4 xonali PIN")} maxLength={4} type="password" inputMode="numeric" />
+              <label className="ab-form-label">{t('Телефон', 'Telefon')}</label>
+              <input className="modal-input" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder={t('Номер телефона', 'Telefon raqami')} />
             </div>
             <div className="modal-actions">
-              <button className="modal-btn cancel" onClick={() => setModal(null)}>Отмена</button>
-              <button className="modal-btn save" onClick={handleSave}>Сохранить</button>
+              <button className="modal-btn cancel" onClick={() => setModal(null)}>{t('Отмена', 'Bekor qilish')}</button>
+              <button className="modal-btn save" onClick={handleSave}>{t('Сохранить', 'Saqlash')}</button>
             </div>
           </div>
         </div>

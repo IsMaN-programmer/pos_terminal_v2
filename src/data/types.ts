@@ -23,6 +23,7 @@ export interface MenuItem {
   mxik?: string
   mxikName?: string
   mxikMarking?: boolean
+  goodsId?: number
 }
 
 export interface OrderItem {
@@ -32,6 +33,7 @@ export interface OrderItem {
   unitPrice: number
   total: number
   comment?: string
+  markCodes?: string[]
 }
 
 export interface Order {

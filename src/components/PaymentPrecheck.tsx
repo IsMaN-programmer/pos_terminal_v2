@@ -7,6 +7,7 @@ import { fiscalDriveApi } from '../services/fiscalDriveApi'
 import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetchAndStoreCompanyData } from '../utils/companyInfo'
 import { buildAvansReceiptHtml, printReceiptHtml, type PaperSize } from '../utils/receiptHtml'
 import { formatAvansReceipt, printText } from '../utils/printService'
+import { useT, tr, locale } from '../i18n'
 
 const PRINTERS_KEY = 'pos_v2_printer_name'
 const PAPER_KEY = 'pos_v2_paper_size'
@@ -34,13 +35,7 @@ interface PaymentPrecheckProps {
   avansPrinted?: boolean
 }
 
-const now = new Date()
-const dateStr = now.toLocaleDateString('ru-RU')
-const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-
 const ORDER_COUNTER_KEY = 'pos_v2_order_counter'
-
-const ROLE_LABELS: Record<string, string> = { waiter: 'Официант', cashier: 'Кассир', admin: 'Администратор' }
 
 function getNextOrderNumber(): number {
   const today = new Date().toISOString().slice(0, 10)
@@ -64,6 +59,12 @@ export default function PaymentPrecheck({
   const [avansOrderNum, setAvansOrderNum] = useState(0)
   const [toast, setToast] = useState<string | null>(null)
 
+  const t = useT()
+  const now = new Date()
+  const dateStr = now.toLocaleDateString(locale())
+  const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
+  const ROLE_LABELS: Record<string, string> = { waiter: t('Официант', 'Ofitsiant'), cashier: t('Кассир', 'Kassir'), admin: t('Администратор', 'Administrator') }
+
   const tableStatus = table?.status || 'ordered'
   const isDelivered = tableStatus === 'occupied' || avansPrinted
   const isAvansIssued = avansPrinted
@@ -78,7 +79,7 @@ export default function PaymentPrecheck({
   function handleIssueAvans() {
     const printer = localStorage.getItem(PRINTERS_KEY)
     if (!printer) {
-      showToastMsg('Подключите принтер в настройках')
+      showToastMsg(tr('Подключите принтер в настройках', 'Sozlamalarda printerni ulang'))
       return
     }
     if (!avansOrderNum) setAvansOrderNum(getNextOrderNumber())
@@ -89,8 +90,8 @@ export default function PaymentPrecheck({
     const printer = localStorage.getItem(PRINTERS_KEY)
     const paperSize: PaperSize = ((localStorage.getItem(PAPER_KEY) as PaperSize) || '58')
     const now = new Date()
-    const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const dateStr = now.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
     let orgStir = getCompanyTin()
     let orgName = getCompanyName()
@@ -153,7 +154,7 @@ export default function PaymentPrecheck({
         }, paperSize)
         await printText(printer!, text)
       } catch (e2) {
-        alert('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'))
+        alert(tr('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'), "Chop etish xatosi: " + (e2 instanceof Error ? e2.message : "noma'lum xato")))
       }
     }
   }
@@ -163,17 +164,17 @@ export default function PaymentPrecheck({
       <div className="screen-header">
         <h1 className="screen-title">
           <ReceiptIcon />
-          Оплата / Avans-check
+          {t('Оплата / Avans-check', "To'lov / Avans-chek")}
         </h1>
         <div className="menu-header-btns">
-          {onBack && <button className="menu-header-btn back" onClick={onBack}>Назад</button>}
+          {onBack && <button className="menu-header-btn back" onClick={onBack}>{t('Назад', 'Orqaga')}</button>}
         </div>
       </div>
 
       <div className="kitchen-card">
         <div className="order-info-bar kitchen-card-header">
           <div className="order-info-item">
-            <span className="order-info-label">Стол:</span>
+            <span className="order-info-label">{t('Стол:', 'Stol:')}</span>
             <span className="order-info-value">{table?.name || '—'}</span>
           </div>
           <div className="order-info-item">
@@ -181,20 +182,20 @@ export default function PaymentPrecheck({
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
               <circle cx="9" cy="7" r="4" />
             </svg>
-            <span>{guestCount} чел.</span>
+            <span>{guestCount} {t('чел.', 'kishi')}</span>
           </div>
           <div className="order-info-item">
             <span>{dateStr}</span>
             <span className="order-info-time">{timeStr}</span>
           </div>
           <div className="order-info-item">
-            <span className="payment-precheck-badge">Avans-check</span>
+            <span className="payment-precheck-badge">{t('Avans-check', 'Avans-chek')}</span>
           </div>
         </div>
 
         <div className="kitchen-card-body">
           <div className="kitchen-items-panel">
-            <h3 className="kitchen-panel-title">Список блюд</h3>
+            <h3 className="kitchen-panel-title">{t('Список блюд', "Taomlar ro'yxati")}</h3>
             <div className="payment-items-list">
               {orderItems.map(item => {
                 const photo = getPhoto(item.menuItem.name)
@@ -211,20 +212,20 @@ export default function PaymentPrecheck({
               })}
             </div>
             <div className="payment-summary">
-              <span>Итого: {orderItems.reduce((s, i) => s + i.quantity, 0)} блюд</span>
-              <span className="payment-grand-total">{grandTotal.toLocaleString()} сум</span>
+              <span>{t(`Итого: ${orderItems.reduce((s, i) => s + i.quantity, 0)} блюд`, `Jami: ${orderItems.reduce((s, i) => s + i.quantity, 0)} taom`)}</span>
+              <span className="payment-grand-total">{grandTotal.toLocaleString()} {t('сум', "so'm")}</span>
             </div>
           </div>
 
           <div className="kitchen-actions-panel">
-            <h3 className="kitchen-panel-title">Действия</h3>
+            <h3 className="kitchen-panel-title">{t('Действия', 'Amallar')}</h3>
             <div className="payment-stage-btns">
               <button
                 className={`kitchen-action-btn${isDelivered ? ' disabled' : ' green'}`}
                 disabled={isDelivered}
                 onClick={isDelivered ? undefined : onDelivered}
               >
-                Заказ доставлен
+                {t('Заказ доставлен', 'Buyurtma yetkazildi')}
               </button>
 
               {isDelivered && (
@@ -240,7 +241,7 @@ export default function PaymentPrecheck({
                     className="kitchen-action-btn primary"
                     onClick={handleIssueAvans}
                   >
-                    Выдать Avans-check
+                    {t('Выдать Avans-check', 'Avans-chek berish')}
                   </button>
                 </>
               )}
@@ -258,7 +259,7 @@ export default function PaymentPrecheck({
                     className="kitchen-action-btn primary"
                     onClick={onSendToCashier}
                   >
-                    Отправить на кассу
+                    {t('Отправить на кассу', 'Kassaga yuborish')}
                   </button>
                 </>
               )}
@@ -268,12 +269,12 @@ export default function PaymentPrecheck({
       </div>
 
       <div className="kitchen-sync-bar">
-        <span className="sync-label">Синхронизация с кассой:</span>
+        <span className="sync-label">{t('Синхронизация с кассой:', 'Kassa bilan sinxronlash:')}</span>
         <div className="kitchen-sync-status centered">
           <span className="sync-dot" style={{ background: '#3b82f6' }} />
-          <span>Подключено</span>
+          <span>{t('Подключено', 'Ulangan')}</span>
         </div>
-        <span className="sync-time">Последнее обновление: {timeStr}</span>
+        <span className="sync-time">{t(`Последнее обновление: ${timeStr}`, `Oxirgi yangilanish: ${timeStr}`)}</span>
       </div>
 
       {printingAvans && (

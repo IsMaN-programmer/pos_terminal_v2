@@ -1,5 +1,6 @@
 import { printReceiptNode } from './receiptPrint'
 import { getReceiptLogo } from './receiptLogo'
+import { tr } from '../i18n'
 
 export type PaperSize = '58' | '80'
 
@@ -36,7 +37,7 @@ export function buildAvansReceiptHtml(data: AvansReceiptData): string {
     <div class="ac-item">
       <div class="ac-item-line">
         <span class="ac-item-name">${escHtml(item.name)}</span>
-        <span class="ac-item-right">${item.quantity} x ${item.unitPrice.toLocaleString()} сум</span>
+        <span class="ac-item-right">${item.quantity} x ${item.unitPrice.toLocaleString()} ${tr('сум', 'so\'m')}</span>
       </div>
       <div class="ac-item-tax">${TAX_TYPE}: ${Math.round(item.total * 12 / 100).toLocaleString()}</div>
       <div class="ac-item-mxik">MXIK: ${escHtml(item.mxik || '09901001001000000')}</div>
@@ -53,27 +54,27 @@ export function buildAvansReceiptHtml(data: AvansReceiptData): string {
     <div class="ac-divider dashed"></div>
     <div class="ac-meta">
       <div class="ac-meta-row"><span class="ac-label">STIR</span><span class="ac-value">${escHtml(data.orgStir || '—')}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Дата</span><span class="ac-value">${escHtml(data.dateStr)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Время</span><span class="ac-value">${escHtml(data.timeStr)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Заказ</span><span class="ac-value">#${data.orderNum}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Стол</span><span class="ac-value">${escHtml(data.tableLabel)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Гости</span><span class="ac-value">${data.guestCount}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Дата', 'Sana')}</span><span class="ac-value">${escHtml(data.dateStr)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Время', 'Vaqt')}</span><span class="ac-value">${escHtml(data.timeStr)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Заказ', 'Buyurtma')}</span><span class="ac-value">#${data.orderNum}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Стол', 'Stol')}</span><span class="ac-value">${escHtml(data.tableLabel)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Гости', 'Mehmonlar')}</span><span class="ac-value">${data.guestCount}</span></div>
       <div class="ac-meta-row"><span class="ac-label">${escHtml(data.roleLabel)}</span><span class="ac-value">${escHtml(data.staffName)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Смена</span><span class="ac-value">${escHtml(data.shiftNumber)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Смена', 'Smena')}</span><span class="ac-value">${escHtml(data.shiftNumber)}</span></div>
     </div>
     <div class="ac-divider solid"></div>
     <div class="ac-items">${rows}</div>
     <div class="ac-divider solid"></div>
     <div class="ac-total">
-      <span>ИТОГО:</span>
-      <span class="ac-total-value">${data.total.toLocaleString()} сум</span>
+      <span>${tr('ИТОГО:', 'JAMI:')}</span>
+      <span class="ac-total-value">${data.total.toLocaleString()} ${tr('сум', 'so\'m')}</span>
     </div>
     <div class="ac-vat">${TAX_TYPE}: ${data.vat.toLocaleString()}</div>
     <div class="ac-divider dashed"></div>
     <div class="ac-fiscal">
-      <div class="ac-fiscal-row"><span>Терминал ID:</span><span>${escHtml(data.fmTerminalId || 'TERM-001')}</span></div>
+      <div class="ac-fiscal-row"><span>${tr('Терминал ID', 'Terminal ID')}:</span><span>${escHtml(data.fmTerminalId || 'TERM-001')}</span></div>
     </div>
-    <div class="ac-footer">Спасибо! Ждём вас снова.</div>
+    <div class="ac-footer">${tr('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.')}</div>
   `
 }
 
@@ -82,7 +83,7 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
     <div class="ac-item">
       <div class="ac-item-line">
         <span class="ac-item-name">${escHtml(item.name)}</span>
-        <span class="ac-item-right">${item.quantity} x ${item.unitPrice.toLocaleString()} сум</span>
+        <span class="ac-item-right">${item.quantity} x ${item.unitPrice.toLocaleString()} ${tr('сум', 'so\'m')}</span>
       </div>
       <div class="ac-item-tax">${TAX_TYPE}: ${Math.round(item.total * 12 / 100).toLocaleString()}</div>
       <div class="ac-item-mxik">MXIK: ${escHtml(item.mxik || '09901001001000000')}</div>
@@ -91,14 +92,14 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
 
   const paymentHtml = data.splitAmounts ? `
     <div style="display:flex;flex-direction:column;gap:3px;padding:4px 0;font-size:12px;font-weight:700;color:#000">
-      <span style="font-weight:700;color:#000;margin-bottom:2px">Разделение счета:</span>
-      ${data.splitAmounts.cash > 0 ? `<div style="display:flex;justify-content:space-between"><span>Наличной</span><span style="font-weight:700">${data.splitAmounts.cash.toLocaleString()} сум</span></div>` : ''}
-      ${data.splitAmounts.card > 0 ? `<div style="display:flex;justify-content:space-between"><span>Карта</span><span style="font-weight:700">${data.splitAmounts.card.toLocaleString()} сум</span></div>` : ''}
-      ${data.splitAmounts.click > 0 ? `<div style="display:flex;justify-content:space-between"><span>Click/Payme</span><span style="font-weight:700">${data.splitAmounts.click.toLocaleString()} сум</span></div>` : ''}
+      <span style="font-weight:700;color:#000;margin-bottom:2px">${tr('Разделение счета', 'Hisobni bo\'lish')}:</span>
+      ${data.splitAmounts.cash > 0 ? `<div style="display:flex;justify-content:space-between"><span>${tr('Наличной', 'Naqd')}</span><span style="font-weight:700">${data.splitAmounts.cash.toLocaleString()} ${tr('сум', 'so\'m')}</span></div>` : ''}
+      ${data.splitAmounts.card > 0 ? `<div style="display:flex;justify-content:space-between"><span>${tr('Карта', 'Karta')}</span><span style="font-weight:700">${data.splitAmounts.card.toLocaleString()} ${tr('сум', 'so\'m')}</span></div>` : ''}
+      ${data.splitAmounts.click > 0 ? `<div style="display:flex;justify-content:space-between"><span>${tr('Другое', 'Boshqa')}</span><span style="font-weight:700">${data.splitAmounts.click.toLocaleString()} ${tr('сум', 'so\'m')}</span></div>` : ''}
     </div>
   ` : `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px">
-      <span style="font-weight:700;color:#000">Выбор оплаты:</span>
+      <span style="font-weight:700;color:#000">${tr('Выбор оплаты', 'To\'lov usuli')}:</span>
       <span style="font-weight:700;color:#000">${escHtml(data.selectedMethod)}</span>
     </div>
   `
@@ -117,39 +118,39 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
     <div class="ac-divider dashed"></div>
     <div class="ac-meta">
       <div class="ac-meta-row"><span class="ac-label">STIR</span><span class="ac-value">${escHtml(data.orgStir || '—')}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Дата</span><span class="ac-value">${escHtml(data.dateStr)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Время</span><span class="ac-value">${escHtml(data.timeStr)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Заказ</span><span class="ac-value">#${data.orderNum}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Стол</span><span class="ac-value">${escHtml(data.tableLabel)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Гости</span><span class="ac-value">${data.guestCount}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Дата', 'Sana')}</span><span class="ac-value">${escHtml(data.dateStr)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Время', 'Vaqt')}</span><span class="ac-value">${escHtml(data.timeStr)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Заказ', 'Buyurtma')}</span><span class="ac-value">#${data.orderNum}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Стол', 'Stol')}</span><span class="ac-value">${escHtml(data.tableLabel)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Гости', 'Mehmonlar')}</span><span class="ac-value">${data.guestCount}</span></div>
       <div class="ac-meta-row"><span class="ac-label">${escHtml(data.roleLabel)}</span><span class="ac-value">${escHtml(data.staffName)}</span></div>
-      <div class="ac-meta-row"><span class="ac-label">Смена</span><span class="ac-value">${escHtml(data.shiftNumber)}</span></div>
+      <div class="ac-meta-row"><span class="ac-label">${tr('Смена', 'Smena')}</span><span class="ac-value">${escHtml(data.shiftNumber)}</span></div>
     </div>
     <div class="ac-divider solid"></div>
     <div class="ac-items">${rows}</div>
     <div class="ac-divider solid"></div>
     <div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">
       <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="font-weight:700;color:#000">Общая сумма</span>
-        <span style="font-weight:700;color:#000">${data.totalSum.toLocaleString()} сум</span>
+        <span style="font-weight:700;color:#000">${tr('Общая сумма', 'Umumiy summa')}</span>
+        <span style="font-weight:700;color:#000">${data.totalSum.toLocaleString()} ${tr('сум', 'so\'m')}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="font-weight:700;color:#000">Сервис (${data.servicePercent}%)</span>
-        <span style="font-weight:700;color:#000">${data.serviceAmount.toLocaleString()} сум</span>
+        <span style="font-weight:700;color:#000">${tr('Сервис', 'Xizmat')} (${data.servicePercent}%)</span>
+        <span style="font-weight:700;color:#000">${data.serviceAmount.toLocaleString()} ${tr('сум', 'so\'m')}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="font-weight:700;color:#000">Скидка</span>
-        <span style="font-weight:700;color:#000">${discountDisplay} сум</span>
+        <span style="font-weight:700;color:#000">${tr('Скидка', 'Chegirma')}</span>
+        <span style="font-weight:700;color:#000">${discountDisplay} ${tr('сум', 'so\'m')}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
         <span style="font-weight:700;color:#000">QQS (12%)</span>
-        <span style="font-weight:700;color:#000">${data.qqsAmount.toLocaleString()} сум</span>
+        <span style="font-weight:700;color:#000">${data.qqsAmount.toLocaleString()} ${tr('сум', 'so\'m')}</span>
       </div>
     </div>
     <div class="ac-divider solid"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">
-      <span style="font-size:14px;font-weight:700;color:#000">ИТОГО:</span>
-      <span style="font-size:17px;font-weight:700;color:#000">${data.итого.toLocaleString()} сум</span>
+      <span style="font-size:14px;font-weight:700;color:#000">${tr('ИТОГО:', 'JAMI:')}</span>
+      <span style="font-size:17px;font-weight:700;color:#000">${data.итого.toLocaleString()} ${tr('сум', 'so\'m')}</span>
     </div>
     <div class="ac-vat">${TAX_TYPE}: ${data.qqsAmount.toLocaleString()}</div>
     <div class="ac-divider dashed"></div>
@@ -160,11 +161,11 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
     </div>
     <div class="ac-divider dashed"></div>
     <div class="ac-fiscal">
-      <div class="ac-fiscal-row"><span>Терминал ID:</span><span>${escHtml(data.fmTerminalId || 'TERM-001')}</span></div>
-      <div class="ac-fiscal-row"><span>Фискальный признак:</span><span>${escHtml(data.fiscalSign || '—')}</span></div>
-      ${data.licenseNumber ? `<div class="ac-fiscal-row"><span>Номер лицензии:</span><span>${escHtml(data.licenseNumber)}</span></div>` : ''}
+      <div class="ac-fiscal-row"><span>${tr('Терминал ID', 'Terminal ID')}:</span><span>${escHtml(data.fmTerminalId || 'TERM-001')}</span></div>
+      <div class="ac-fiscal-row"><span>${tr('Фискальный признак', 'Fiskal belgi')}:</span><span>${escHtml(data.fiscalSign || '—')}</span></div>
+      ${data.licenseNumber ? `<div class="ac-fiscal-row"><span>${tr('Номер лицензии', 'Litsenziya raqami')}:</span><span>${escHtml(data.licenseNumber)}</span></div>` : ''}
     </div>
-    <div class="ac-footer">Спасибо! Ждём вас снова.</div>
+    <div class="ac-footer">${tr('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.')}</div>
   `
 }
 
@@ -192,7 +193,7 @@ export function buildKitchenReceiptHtml(data: KitchenReceiptData): string {
     ? `<div class="kc-note">${escHtml(noteParts.join(' · '))}</div>`
     : ''
   const modsHtml = data.orderModifiers && data.orderModifiers.length > 0
-    ? `<div class="kc-mods">Модификаторы: ${escHtml(data.orderModifiers.join(', '))}</div>`
+    ? `<div class="kc-mods">${tr('Модификаторы', 'Modifikatorlar')}: ${escHtml(data.orderModifiers.join(', '))}</div>`
     : ''
   const itemsHtml = data.items.map(item => `
     <div class="kc-item">
@@ -206,15 +207,15 @@ export function buildKitchenReceiptHtml(data: KitchenReceiptData): string {
     <div class="kc-receipt">
       <div class="kc-head">${escHtml(data.kitchenName)}</div>
       <div class="kc-divider"></div>
-      <div class="kc-meta-row"><span>Стол</span><span>${escHtml(data.tableLabel)}</span></div>
-      <div class="kc-meta-row"><span>Гости</span><span>${data.guestCount}</span></div>
-      <div class="kc-meta-row"><span>Время</span><span>${escHtml(data.dateStr)} ${escHtml(data.timeStr)}</span></div>
+      <div class="kc-meta-row"><span>${tr('Стол', 'Stol')}</span><span>${escHtml(data.tableLabel)}</span></div>
+      <div class="kc-meta-row"><span>${tr('Гости', 'Mehmonlar')}</span><span>${data.guestCount}</span></div>
+      <div class="kc-meta-row"><span>${tr('Время', 'Vaqt')}</span><span>${escHtml(data.dateStr)} ${escHtml(data.timeStr)}</span></div>
       <div class="kc-divider"></div>
       ${noteHtml}
       ${modsHtml}
       <div class="kc-items">${itemsHtml}</div>
       <div class="kc-divider"></div>
-      <div class="kc-foot">Заказ отправляется на кухню</div>
+      <div class="kc-foot">${tr('Заказ отправляется на кухню', 'Buyurtma oshxonaga yuborilmoqda')}</div>
     </div>
   `
 }

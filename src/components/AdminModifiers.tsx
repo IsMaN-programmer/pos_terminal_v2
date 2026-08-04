@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useT } from '../i18n'
 
 interface ModifierGroup {
   label: string
@@ -66,6 +67,7 @@ export default function AdminModifiers() {
   const [newGroupLabel, setNewGroupLabel] = useState('')
   const [newOptionInput, setNewOptionInput] = useState<{ group: number; val: string } | null>(null)
   const [newBtnInput, setNewBtnInput] = useState('')
+  const t = useT()
 
   function saveGroups(g: ModifierGroup[]) {
     setGroups(g)
@@ -142,11 +144,11 @@ export default function AdminModifiers() {
   return (
     <div className="screen">
       <div className="screen-header">
-        <h1 className="screen-title">Модификаторы</h1>
+        <h1 className="screen-title">{t('Модификаторы', 'Modifikatorlar')}</h1>
       </div>
       <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24, padding: '20px 0' }}>
         <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: '0 0 16px 0' }}>Модификаторы из окна заказа</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: '0 0 16px 0' }}>{t('Модификаторы из окна заказа', 'Buyurtma oynasidagi modifikatorlar')}</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {groups.map((group, gIdx) => (
@@ -154,7 +156,7 @@ export default function AdminModifiers() {
                 <div className="am-group-header">
                   {editGroupIdx === gIdx ? (
                     <div className="am-edit-inline">
-                      <input className="am-input" value={editGroupLabel} onChange={e => setEditGroupLabel(e.target.value)} placeholder="Название группы..." />
+                      <input className="am-input" value={editGroupLabel} onChange={e => setEditGroupLabel(e.target.value)} placeholder={t('Название группы...', 'Guruh nomi...')} />
                       <button className="am-btn am-btn-sm am-btn-primary" onClick={() => handleSaveGroupLabel(gIdx)}>✓</button>
                       <button className="am-btn am-btn-sm" onClick={() => setEditGroupIdx(null)}>✕</button>
                     </div>
@@ -162,10 +164,10 @@ export default function AdminModifiers() {
                     <>
                       <span className="am-group-label">{group.label}</span>
                       <div className="am-group-actions">
-                        <button className="am-icon-btn" title="Редактировать" onClick={() => { setEditGroupIdx(gIdx); setEditGroupLabel(group.label) }}>
+                        <button className="am-icon-btn" title={t('Редактировать', 'Tahrirlash')} onClick={() => { setEditGroupIdx(gIdx); setEditGroupLabel(group.label) }}>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                         </button>
-                        <button className="am-icon-btn danger" title="Удалить" onClick={() => handleDeleteGroup(gIdx)}>
+                        <button className="am-icon-btn danger" title={t('Удалить', 'O\'chirish')} onClick={() => handleDeleteGroup(gIdx)}>
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                         </button>
                       </div>
@@ -177,7 +179,7 @@ export default function AdminModifiers() {
                     <div key={oIdx} className="am-option-row">
                       {editOptionIdx?.group === gIdx && editOptionIdx.opt === oIdx ? (
                         <div className="am-edit-inline">
-                          <input className="am-input" value={editOptionValue} onChange={e => setEditOptionValue(e.target.value)} placeholder="Модификатор..." />
+                          <input className="am-input" value={editOptionValue} onChange={e => setEditOptionValue(e.target.value)} placeholder={t('Модификатор...', 'Modifikator...')} />
                           <button className="am-btn am-btn-sm am-btn-primary" onClick={() => handleSaveOption(gIdx, oIdx)}>✓</button>
                           <button className="am-btn am-btn-sm" onClick={() => setEditOptionIdx(null)}>✕</button>
                         </div>
@@ -185,10 +187,10 @@ export default function AdminModifiers() {
                         <>
                           <span className="am-option-name">{opt}</span>
                           <div className="am-option-actions">
-                            <button className="am-icon-btn" title="Редактировать" onClick={() => { setEditOptionIdx({ group: gIdx, opt: oIdx }); setEditOptionValue(opt) }}>
+                            <button className="am-icon-btn" title={t('Редактировать', 'Tahrirlash')} onClick={() => { setEditOptionIdx({ group: gIdx, opt: oIdx }); setEditOptionValue(opt) }}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                             </button>
-                            <button className="am-icon-btn danger" title="Удалить" onClick={() => handleDeleteOption(gIdx, oIdx)}>
+                            <button className="am-icon-btn danger" title={t('Удалить', 'O\'chirish')} onClick={() => handleDeleteOption(gIdx, oIdx)}>
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                             </button>
                           </div>
@@ -198,12 +200,12 @@ export default function AdminModifiers() {
                   ))}
                   {newOptionInput?.group === gIdx ? (
                     <div className="am-edit-inline" style={{ marginTop: 6 }}>
-                      <input className="am-input" value={newOptionInput.val} onChange={e => setNewOptionInput({ group: gIdx, val: e.target.value })} placeholder="Новый модификатор..." />
+                      <input className="am-input" value={newOptionInput.val} onChange={e => setNewOptionInput({ group: gIdx, val: e.target.value })} placeholder={t('Новый модификатор...', 'Yangi modifikator...')} />
                       <button className="am-btn am-btn-sm am-btn-primary" onClick={() => handleAddOption(gIdx)}>✓</button>
                       <button className="am-btn am-btn-sm" onClick={() => setNewOptionInput(null)}>✕</button>
                     </div>
                   ) : (
-                    <button className="am-add-option-btn" onClick={() => setNewOptionInput({ group: gIdx, val: '' })}>+ Добавить модификатор</button>
+                    <button className="am-add-option-btn" onClick={() => setNewOptionInput({ group: gIdx, val: '' })}>+ {t('Добавить модификатор', 'Modifikator qo\'shish')}</button>
                   )}
                 </div>
               </div>
@@ -213,17 +215,17 @@ export default function AdminModifiers() {
           <div className="am-divider" />
 
           <div className="am-add-group-row">
-            <input className="am-input" style={{ flex: 1 }} value={newGroupLabel} onChange={e => setNewGroupLabel(e.target.value)} placeholder="Название новой группы..." />
-            <button className="am-btn am-btn-primary" onClick={handleAddGroup}>Добавить группу</button>
+            <input className="am-input" style={{ flex: 1 }} value={newGroupLabel} onChange={e => setNewGroupLabel(e.target.value)} placeholder={t('Название новой группы...', 'Yangi guruh nomi...')} />
+            <button className="am-btn am-btn-primary" onClick={handleAddGroup}>{t('Добавить группу', 'Guruh qo\'shish')}</button>
           </div>
         </div>
 
         {additives.length > 0 && (
           <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: '0 0 16px 0' }}>Добавка (из склада)</h3>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: '0 0 16px 0' }}>{t('Добавка (из склада)', 'Qo\'shimcha (ombordan)')}</h3>
             <div className="am-group" style={{ border: '1px solid #e2e8f0', borderRadius: 10, padding: 20 }}>
               <div className="am-group-header">
-                <span className="am-group-label">Добавка</span>
+                <span className="am-group-label">{t('Добавка', 'Qo\'shimcha')}</span>
               </div>
               <div className="am-options">
                 {additives.map(a => (
@@ -237,14 +239,14 @@ export default function AdminModifiers() {
         )}
 
         <div style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: '0 0 16px 0' }}>Кнопки действий</h3>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b', margin: '0 0 16px 0' }}>{t('Кнопки действий', 'Amallar tugmalari')}</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {buttons.map((btn, idx) => (
               <div key={idx} className="am-option-row">
                 {editBtnIdx === idx ? (
                   <div className="am-edit-inline">
-                    <input className="am-input" value={editBtnValue} onChange={e => setEditBtnValue(e.target.value)} placeholder="Название кнопки..." />
+                    <input className="am-input" value={editBtnValue} onChange={e => setEditBtnValue(e.target.value)} placeholder={t('Название кнопки...', 'Tugma nomi...')} />
                     <button className="am-btn am-btn-sm am-btn-primary" onClick={() => handleSaveButton(idx)}>✓</button>
                     <button className="am-btn am-btn-sm" onClick={() => setEditBtnIdx(null)}>✕</button>
                   </div>
@@ -252,10 +254,10 @@ export default function AdminModifiers() {
                   <>
                     <span className="am-option-name">{btn}</span>
                     <div className="am-option-actions">
-                      <button className="am-icon-btn" title="Редактировать" onClick={() => { setEditBtnIdx(idx); setEditBtnValue(btn) }}>
+                      <button className="am-icon-btn" title={t('Редактировать', 'Tahrirlash')} onClick={() => { setEditBtnIdx(idx); setEditBtnValue(btn) }}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                       </button>
-                      <button className="am-icon-btn danger" title="Удалить" onClick={() => handleDeleteButton(idx)}>
+                      <button className="am-icon-btn danger" title={t('Удалить', 'O\'chirish')} onClick={() => handleDeleteButton(idx)}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                       </button>
                     </div>
@@ -268,8 +270,8 @@ export default function AdminModifiers() {
           <div className="am-divider" />
 
           <div className="am-add-group-row">
-            <input className="am-input" style={{ flex: 1 }} value={newBtnInput} onChange={e => setNewBtnInput(e.target.value)} placeholder="Название новой кнопки..." />
-            <button className="am-btn am-btn-primary" onClick={handleAddButton}>Добавить кнопку</button>
+            <input className="am-input" style={{ flex: 1 }} value={newBtnInput} onChange={e => setNewBtnInput(e.target.value)} placeholder={t('Название новой кнопки...', 'Yangi tugma nomi...')} />
+            <button className="am-btn am-btn-primary" onClick={handleAddButton}>{t('Добавить кнопку', 'Tugma qo\'shish')}</button>
           </div>
         </div>
       </div>

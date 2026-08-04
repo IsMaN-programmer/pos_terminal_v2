@@ -7,6 +7,7 @@ import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetc
 import { buildFiscalReceiptHtml, printReceiptHtml, type PaperSize } from '../utils/receiptHtml'
 import { formatFiscalReceipt, printText } from '../utils/printService'
 import { getReceiptLogo } from '../utils/receiptLogo'
+import { useT, tr, locale } from '../i18n'
 
 const ORDER_COUNTER_KEY = 'pos_v2_order_counter'
 const PRINTERS_KEY = 'pos_v2_printer_name'
@@ -54,21 +55,18 @@ interface CheckReceiptProps {
   onComplete: (fiscalData?: FiscalData) => void
 }
 
-
-
-const methodLabel: Record<string, string> = {
-  cash: 'Наличной',
-  card: 'Карта',
-  click: 'Click/Payme',
-}
-
-const ROLE_LABELS: Record<string, string> = { waiter: 'Официант', cashier: 'Кассир', admin: 'Администратор' }
-
 export default function CheckReceipt({
   items, tableName, guestCount, staffName, userRole, shiftNumber = '001', servicePercent,
   discountType, discountPercent, discountAmount, selectedMethod, splitAmounts,
   onBack, onComplete,
 }: CheckReceiptProps) {
+  const t = useT()
+  const methodLabel: Record<string, string> = {
+    cash: t('Наличной', 'Naqd'),
+    card: t('Карта', 'Karta'),
+    click: t('Другое', 'Boshqa'),
+  }
+  const ROLE_LABELS: Record<string, string> = { waiter: t('Официант', 'Ofitsiant'), cashier: t('Кассир', 'Kassir'), admin: t('Администратор', 'Administrator') }
   const [fiscalOrderNum, setFiscalOrderNum] = useState(0)
   const [fiscalData, setFiscalData] = useState<FiscalData | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -189,8 +187,8 @@ export default function CheckReceipt({
   const итого = qqsBase
 
   const now = new Date()
-  const dateStr = now.toLocaleDateString('ru-RU')
-  const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const dateStr = now.toLocaleDateString(locale())
+  const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
 
   function handleRefreshFm() {
     if (fmChecking) return
@@ -266,7 +264,7 @@ export default function CheckReceipt({
 
   async function handleFiscalIssue() {
     const printer = localStorage.getItem(PRINTERS_KEY)
-    if (!printer) { showToastMsg('Подключите принтер в настройках'); return }
+    if (!printer) { showToastMsg(tr('Подключите принтер в настройках', 'Sozlamalarda printerni ulang')); return }
 
     const fm = await probeFiscalModule()
     setFmConnected(fm.connected)
@@ -274,18 +272,18 @@ export default function CheckReceipt({
     setFmTerminalId(fm.terminalId)
     setFmDescription(fm.description)
     if (!fm.connected || !fm.factoryId) {
-      showToastMsg('Подключите фискальный модуль')
+      showToastMsg(tr('Подключите фискальный модуль', 'Fiskal modulni ulang'))
       return
     }
 
     const online = await checkInternet()
     if (!online) {
-      showToastMsg('Нет подключения к интернету')
+      showToastMsg(tr('Нет подключения к интернету', "Internetga ulanish yo'q"))
       return
     }
 
     const shiftOpen = localStorage.getItem('pos_v2_shift_open') === 'true'
-    if (!shiftOpen) { showToastMsg('Сначала откройте смену в Фискальном модуле'); return }
+    if (!shiftOpen) { showToastMsg(tr('Сначала откройте смену в Фискальном модуле', 'Avval Fiskal modulda smenani oching')); return }
     if (!fiscalOrderNum) setFiscalOrderNum(getNextOrderNumber())
     setPrintingFiscal(true)
   }
@@ -318,7 +316,7 @@ export default function CheckReceipt({
       }
     } catch (e: any) {
       fiscalResultRef.current.failed = true
-      fiscalResultRef.current.lastError = e.message || 'соединение не удалось'
+      fiscalResultRef.current.lastError = e.message || tr('соединение не удалось', "ulanish amalga oshmadi")
       return
     }
 
@@ -356,8 +354,8 @@ export default function CheckReceipt({
     }
 
     const receiptNow = new Date()
-    const receiptDateStr = receiptNow.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    const receiptTimeStr = receiptNow.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const receiptDateStr = receiptNow.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const receiptTimeStr = receiptNow.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' })
     const roleLabel = ROLE_LABELS[userRole] || userRole
 
     const html = buildFiscalReceiptHtml({
@@ -370,7 +368,7 @@ export default function CheckReceipt({
       })),
       totalSum, serviceAmount, servicePercent,
       discountValue, qqsAmount, итого,
-      selectedMethod: selectedMethod ? methodLabel[selectedMethod] : 'Не выбран',
+      selectedMethod: selectedMethod ? methodLabel[selectedMethod] : t('Не выбран', 'Tanlanmagan'),
       splitAmounts, fmTerminalId, fiscalSign: fd.fiscalSign, qrCodeUrl: fd.qrCodeUrl,
     }, qrImgSrc)
 
@@ -389,12 +387,12 @@ export default function CheckReceipt({
           })),
           totalSum, serviceAmount, servicePercent,
           discountValue, qqsAmount, итого,
-          selectedMethod: selectedMethod ? methodLabel[selectedMethod] : 'Не выбран',
+          selectedMethod: selectedMethod ? methodLabel[selectedMethod] : t('Не выбран', 'Tanlanmagan'),
           splitAmounts, fmTerminalId, fiscalSign: fd.fiscalSign, qrCodeUrl: fd.qrCodeUrl,
         }, paperSize)
         await printText(printer!, text)
       } catch (e2) {
-        alert('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'))
+        alert(tr('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'), "Chop etish xatosi: " + (e2 instanceof Error ? e2.message : "noma'lum xato")))
       }
     }
   }
@@ -405,7 +403,7 @@ export default function CheckReceipt({
     let loc: { latitude: string; longitude: string } | null = null
     try { loc = await getLocation() } catch {}
     const payload = buildFiscalPayload(orderNum, loc)
-    queueFiscalReceipt(payload, 'Не отправлен (завершение оплаты)')
+    queueFiscalReceipt(payload, tr('Не отправлен (завершение оплаты)', "Yuborilmagan (to'lovni yakunlash)"))
   }
 
   function handleCompletePayment() {
@@ -424,16 +422,16 @@ export default function CheckReceipt({
             <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z" />
             <path d="M8 7h8" /><path d="M8 11h8" /><path d="M8 15h5" />
           </svg>
-          Чек / Квитанция
+          {t('Чек / Квитанция', 'Chek / Kvitansiya')}
         </h1>
         <div className="menu-header-btns">
-          <button className="menu-header-btn back" onClick={onBack}>Назад</button>
+          <button className="menu-header-btn back" onClick={onBack}>{t('Назад', 'Orqaga')}</button>
         </div>
       </div>
 
       <div className="order-info-bar">
         <div className="order-info-item">
-          <span className="order-info-label">Стол:</span>
+          <span className="order-info-label">{t('Стол:', 'Stol:')}</span>
           <span className="order-info-value">{tableName}</span>
         </div>
         <div className="order-info-item">
@@ -442,7 +440,7 @@ export default function CheckReceipt({
             <circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" />
             <path d="M16 3.13a4 4 0 0 1 0 7.75" />
           </svg>
-          <span>{guestCount} чел.</span>
+          <span>{guestCount} {t('чел.', 'kishi')}</span>
         </div>
         <div className="order-info-item">
           <span>{dateStr}</span>
@@ -454,7 +452,7 @@ export default function CheckReceipt({
         <div className="cashier-payment-left">
           <div className="payment-summary-box">
             <div style={{ padding: '12px 24px', borderBottom: '1px solid #e2e8f0', textAlign: 'center' }}>
-              <h3 style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>Информация чека</h3>
+              <h3 style={{ fontSize: 13, fontWeight: 700, color: '#1e293b' }}>{t('Информация чека', "Chek ma'lumoti")}</h3>
             </div>
             <div className="payment-summary-inner" style={{ padding: 0 }}>
               <div className="ac-receipt paper-58" style={{ width: '100%', border: 'none', margin: 0, padding: '20px 24px', maxWidth: 'none', boxSizing: 'border-box' }}>
@@ -480,66 +478,66 @@ export default function CheckReceipt({
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '4px 0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                    <span style={{ color: '#555' }}>Общая сумма</span>
-                    <span style={{ fontWeight: 700 }}>{totalSum.toLocaleString()} сум</span>
+                    <span style={{ color: '#555' }}>{t('Общая сумма', 'Umumiy summa')}</span>
+                    <span style={{ fontWeight: 700 }}>{totalSum.toLocaleString()} {t('сум', "so'm")}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                    <span style={{ color: '#555' }}>Сервис ({servicePercent}%)</span>
-                    <span style={{ fontWeight: 700 }}>{serviceAmount.toLocaleString()} сум</span>
+                    <span style={{ color: '#555' }}>{t(`Сервис (${servicePercent}%)`, `Xizmat (${servicePercent}%)`)}</span>
+                    <span style={{ fontWeight: 700 }}>{serviceAmount.toLocaleString()} {t('сум', "so'm")}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
-                    <span style={{ color: '#555' }}>Скидка</span>
-                    <span style={{ fontWeight: 700, color: discountValue > 0 ? '#ef4444' : '#1e293b' }}>{discountValue > 0 ? `−${discountValue.toLocaleString()}` : '0'} сум</span>
+                    <span style={{ color: '#555' }}>{t('Скидка', 'Chegirma')}</span>
+                    <span style={{ fontWeight: 700, color: discountValue > 0 ? '#ef4444' : '#1e293b' }}>{discountValue > 0 ? `−${discountValue.toLocaleString()}` : '0'} {t('сум', "so'm")}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11 }}>
                     <span style={{ color: '#555' }}>QQS (12%)</span>
-                    <span style={{ fontWeight: 700 }}>{qqsAmount.toLocaleString()} сум</span>
+                    <span style={{ fontWeight: 700 }}>{qqsAmount.toLocaleString()} {t('сум', "so'm")}</span>
                   </div>
                 </div>
 
                 <div className="ac-divider solid" />
 
                 <div className="ac-total">
-                  <span>ИТОГО:</span>
-                  <span className="ac-total-value">{итого.toLocaleString()} сум</span>
+                  <span>{t('ИТОГО:', 'JAMI:')}</span>
+                  <span className="ac-total-value">{итого.toLocaleString()} {t('сум', "so'm")}</span>
                 </div>
 
                 <div className="ac-divider dashed" />
 
                 {splitAmounts ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, padding: '4px 0' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>Разделение счета</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#555', marginBottom: 4 }}>{t('Разделение счета', "Hisobni bo'lish")}</span>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
                           <rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" />
                         </svg>
-                        Наличной
+                        {t('Наличной', 'Naqd')}
                       </span>
-                      <span style={{ fontWeight: 700 }}>{splitAmounts.cash.toLocaleString()} сум</span>
+                      <span style={{ fontWeight: 700 }}>{splitAmounts.cash.toLocaleString()} {t('сум', "so'm")}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
                           <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                         </svg>
-                        Карта
+                        {t('Карта', 'Karta')}
                       </span>
-                      <span style={{ fontWeight: 700 }}>{splitAmounts.card.toLocaleString()} сум</span>
+                      <span style={{ fontWeight: 700 }}>{splitAmounts.card.toLocaleString()} {t('сум', "so'm")}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
                           <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                         </svg>
-                        Click/Payme
+                        {t('Другое', 'Boshqa')}
                       </span>
-                      <span style={{ fontWeight: 700 }}>{splitAmounts.click.toLocaleString()} сум</span>
+                      <span style={{ fontWeight: 700 }}>{splitAmounts.click.toLocaleString()} {t('сум', "so'm")}</span>
                     </div>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>Выбор оплаты</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>{t('Выбор оплаты', "To'lov usuli")}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       {selectedMethod === 'cash' && (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
@@ -557,7 +555,7 @@ export default function CheckReceipt({
                         </svg>
                       )}
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#333' }}>
-                        {selectedMethod ? methodLabel[selectedMethod] : 'Не выбран'}
+                        {selectedMethod ? methodLabel[selectedMethod] : t('Не выбран', 'Tanlanmagan')}
                       </span>
                     </div>
                   </div>
@@ -577,7 +575,7 @@ export default function CheckReceipt({
           <div className="payment-summary-box" style={{ position: 'relative' }}>
             <div style={{ padding: '20px 24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>Информация о Фискальном модуле</h3>
+                <h3 style={{ fontSize: 16, fontWeight: 700, color: '#1e293b' }}>{t('Информация о Фискальном модуле', "Fiskal modul haqida ma'lumot")}</h3>
                 <button
                   onClick={handleRefreshFm}
                   disabled={fmChecking}
@@ -595,21 +593,21 @@ export default function CheckReceipt({
                   <span style={{ fontWeight: 700, color: '#1e293b' }}>{fmConnected ? (fmTerminalId || fmDescription || fmFactoryId) : '—'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15 }}>
-                  <span style={{ color: '#64748b' }}>Последняя проверка</span>
+                  <span style={{ color: '#64748b' }}>{t('Последняя проверка', 'Oxirgi tekshiruv')}</span>
                   <span style={{ fontWeight: 600, color: '#1e293b' }}>
-                    {fmChecking ? 'Проверка...' : `${fmCheckTime.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })} ${fmCheckTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`}
+                    {fmChecking ? t('Проверка...', 'Tekshirilmoqda...') : `${fmCheckTime.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' })} ${fmCheckTime.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })}`}
                   </span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, alignItems: 'center' }}>
-                  <span style={{ color: '#64748b' }}>Статус</span>
+                  <span style={{ color: '#64748b' }}>{t('Статус', 'Holat')}</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     {fmChecking ? (
-                      <span style={{ fontSize: 13, color: '#f97316', fontWeight: 600 }}>Проверка...</span>
+                      <span style={{ fontSize: 13, color: '#f97316', fontWeight: 600 }}>{t('Проверка...', 'Tekshirilmoqda...')}</span>
                     ) : (
                       <>
                         <span style={{ width: 8, height: 8, borderRadius: '50%', background: fmConnected ? '#22c55e' : '#ef4444' }} />
                         <span style={{ fontWeight: 700, color: fmConnected ? '#16a34a' : '#dc2626' }}>
-                          {fmConnected ? 'Подключен' : 'Не подключен'}
+                          {fmConnected ? t('Подключен', 'Ulangan') : t('Не подключен', 'Ulanmagan')}
                         </span>
                       </>
                     )}
@@ -626,10 +624,10 @@ export default function CheckReceipt({
               disabled={fiscalIssued}
               onClick={handleFiscalIssue}
             >
-              Выдать фискальный чек
+              {t('Выдать фискальный чек', 'Fiskal chek berish')}
             </button>
             <button className="kitchen-action-btn primary" style={{ padding: '16px 20px', fontSize: 16, background: '#22c55e' }} onClick={handleCompletePayment}>
-              Завершить оплату
+              {t('Завершить оплату', "To'lovni yakunlash")}
             </button>
           </div>
         </div>
@@ -641,14 +639,14 @@ export default function CheckReceipt({
           onComplete={() => {
             setPrintingFiscal(false)
             if (fiscalResultRef.current.failed) {
-              showToastMsg('Не удалось зарегистрировать чек: ' + (fiscalResultRef.current.lastError || 'неизвестная ошибка'))
+              showToastMsg(tr('Не удалось зарегистрировать чек: ' + (fiscalResultRef.current.lastError || 'неизвестная ошибка'), "Chekni ro'yxatdan o'tkazib bo'lmadi: " + (fiscalResultRef.current.lastError || "noma'lum xato")))
               return
             }
             setFiscalIssued(true)
             showToastMsg(
               fiscalResultRef.current.ofdSynced
-                ? 'Чек зарегистрирован и отправлен в ОФД'
-                : 'Фискальный чек выдан'
+                ? tr('Чек зарегистрирован и отправлен в ОФД', "Chek ro'yxatdan o'tkazildi va OFDga yuborildi")
+                : tr('Фискальный чек выдан', 'Fiskal chek berildi')
             )
           }}
         />

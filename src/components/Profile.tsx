@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { UserIcon } from './Icons'
 import type { HistoryEntry } from '../data/types'
+import { useT, tr, locale } from '../i18n'
 
 interface ProfileProps {
   history?: HistoryEntry[]
@@ -19,12 +20,13 @@ interface ProfileProps {
 }
 
 function formatTime(d: Date) {
-  const dateStr = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  const dateStr = d.toLocaleDateString(locale(), { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const timeStr = d.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
   return `${dateStr} ${timeStr}`
 }
 
 export default function Profile({ history = [], onChangeRole, shiftActive = false, shiftStartTime = '—', shiftEndTime = '—', shiftEnding = false, shiftNumber = '—', onShiftStart, onShiftEnd, activeTableCount = 0, userRole = 'waiter', staffName = 'Пользователь', staffId }: ProfileProps) {
+  const t = useT()
   const [notify, setNotify] = useState('')
   const paidTotal = history
     .filter(h => h.status === 'paid')
@@ -44,7 +46,7 @@ export default function Profile({ history = [], onChangeRole, shiftActive = fals
     if (!shiftActive) {
       onShiftStart?.(formatTime(new Date()))
     } else if (activeTableCount > 0) {
-      setNotify('Сначала завершите все активные заказы')
+      setNotify(tr('Сначала завершите все активные заказы', 'Avval barcha faol buyurtmalarni yakunlang'))
       setTimeout(() => setNotify(''), 2500)
     } else {
       onShiftEnd?.(formatTime(new Date()))
@@ -56,7 +58,7 @@ export default function Profile({ history = [], onChangeRole, shiftActive = fals
       <div className="screen-header">
         <h1 className="screen-title">
           <UserIcon />
-          Профиль
+          {t('Профиль', 'Profil')}
         </h1>
       </div>
 
@@ -69,45 +71,45 @@ export default function Profile({ history = [], onChangeRole, shiftActive = fals
           </div>
           <div className="profile-name profile-name-lg">{staffName}</div>
           <div className="profile-position profile-position-lg">
-            {userRole === 'cashier' ? 'Кассир' : userRole === 'admin' ? 'Администратор' : 'Официант'}
+            {userRole === 'cashier' ? t('Кассир', 'Kassir') : userRole === 'admin' ? t('Администратор', 'Administrator') : t('Официант', 'Ofitsiant')}
           </div>
           <div className="profile-id profile-id-lg">ID: {staffId || '—'}</div>
         </div>
 
         <div className="shift-section">
-          <h3 className="shift-title">Смена</h3>
+          <h3 className="shift-title">{t('Смена', 'Smena')}</h3>
           <div className="shift-details">
             <div className="shift-row">
-              <span className="shift-label">Номер смены:</span>
+              <span className="shift-label">{t('Номер смены:', 'Smena raqami:')}</span>
               <span className="shift-value">{shiftNumber}</span>
             </div>
             <div className="shift-row">
-              <span className="shift-label">Начало:</span>
+              <span className="shift-label">{t('Начало:', 'Boshlanishi:')}</span>
               <span className="shift-value">{shiftStartTime}</span>
             </div>
             <div className="shift-row">
-              <span className="shift-label">Конец:</span>
+              <span className="shift-label">{t('Конец:', 'Tugashi:')}</span>
               <span className="shift-value">{shiftEnding ? shiftEndTime : '—'}</span>
             </div>
             <div className="shift-row">
-              <span className="shift-label">Продажи:</span>
-              <span className="shift-value highlight">{paidTotal.toLocaleString()} сум</span>
+              <span className="shift-label">{t('Продажи:', 'Savdolar:')}</span>
+              <span className="shift-value highlight">{paidTotal.toLocaleString()} {t('сум', "so'm")}</span>
             </div>
             <div className="shift-row">
-              <span className="shift-label">Обслужено столов:</span>
+              <span className="shift-label">{t('Обслужено столов:', 'Xizmat qilingan stollar:')}</span>
               <span className="shift-value">{servedTables}</span>
             </div>
           </div>
           {shiftEnding ? (
-            <div className="shift-ending-text">Смена завершена, перенаправление...</div>
+            <div className="shift-ending-text">{t('Смена завершена, перенаправление...', "Smena yakunlandi, yo'naltirilmoqda...")}</div>
           ) : (
             <button className="shift-action-btn" onClick={handleShiftAction}>
-              {shiftActive ? 'Завершить смену' : 'Начать смену'}
+              {shiftActive ? t('Завершить смену', 'Smenani yakunlash') : t('Начать смену', 'Smenani boshlash')}
             </button>
           )}
         </div>
 
-        <button className="role-change-btn" onClick={onChangeRole}>Сменить роль</button>
+        <button className="role-change-btn" onClick={onChangeRole}>{t('Сменить роль', 'Rolni almashtirish')}</button>
       </div>
     </div>
   )

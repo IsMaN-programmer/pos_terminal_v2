@@ -1,6 +1,8 @@
 import { useState, useMemo, useRef } from 'react'
 import type { MenuItem, OrderItem, Table } from '../data/types'
 import { MenuIcon, FoodIcon } from './Icons'
+import MarkingModal from './MarkingModal'
+import { useT } from '../i18n'
 
 const MENU_KEY = 'pos_v2_menu'
 const GOODS_KEY = 'pos_v2_stock_goods'
@@ -51,9 +53,12 @@ interface MenuSelectionProps {
 }
 
 export default function MenuSelection({ onContinue, onBack, initialSelected, existingItems }: MenuSelectionProps) {
+  const t = useT()
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState('Все')
   const [selected, setSelected] = useState<Set<number>>(initialSelected || new Set())
+  const [markingFor, setMarkingFor] = useState<MenuItem | null>(null)
+  const [markCodes, setMarkCodes] = useState<Record<number, string[]>>({})
   const [scanning, setScanning] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
   const scanBuf = useRef('')
@@ -70,7 +75,11 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
 
   const comboItems = menuItems.filter(item => item.category === 'Комбо')
 
-  function handleToggleItem(item: MenuItem) {
+  function handleToggleItem(item: MenuItem, skipMarking = false) {
+    if (!selected.has(item.id) && item.mxikMarking && !skipMarking) {
+      setMarkingFor(item)
+      return
+    }
     setSelected(prev => {
       const next = new Set(prev)
       if (next.has(item.id)) {
@@ -95,6 +104,7 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
           quantity: qty,
           unitPrice: item.price,
           total: item.price * qty,
+          markCodes: item.mxikMarking ? (markCodes[item.id] || []) : undefined,
         }
       })
     onContinue(items)
@@ -107,18 +117,18 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
       <div className="screen-header">
         <h1 className="screen-title">
           <MenuIcon />
-          Меню и выбор блюд
+          {t('Меню и выбор блюд', 'Menyu va taomlar tanlash')}
         </h1>
         <div className="menu-header-btns">
           {onBack && (
-            <button className="menu-header-btn back" onClick={onBack}>Назад</button>
+            <button className="menu-header-btn back" onClick={onBack}>{t('Назад', 'Orqaga')}</button>
           )}
           <button
             className={`menu-header-btn continue${totalSelected === 0 ? ' disabled' : ''}`}
             onClick={handleContinue}
             disabled={totalSelected === 0}
           >
-            Продолжить
+            {t('Продолжить', 'Davom etish')}
           </button>
         </div>
       </div>
@@ -130,7 +140,7 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
         <input
           ref={searchRef}
           type="text"
-          placeholder="Поиск..."
+          placeholder={t('Поиск...', 'Qidirish...')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           onKeyDown={e => {
@@ -164,7 +174,7 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
         />
         <button
           className={`menu-scanner-btn${scanning ? ' active' : ''}`}
-          title="Сканировать штрих-код"
+          title={t('Сканировать штрих-код', 'Shtrix-kodni skanerlash')}
           onClick={() => {
             if (scanning) {
               setScanning(false)
@@ -192,7 +202,7 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
             className={`menu-cat-btn${activeCategory === cat ? ' active' : ''}`}
             onClick={() => setActiveCategory(cat)}
           >
-            {cat}
+            {cat === 'Все' ? t('Все', 'Barchasi') : cat}
           </button>
         ))}
       </div>
@@ -210,11 +220,11 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
               </div>
               <div className="menu-card-body">
                 <span className="menu-card-name">{item.name}</span>
-                <span className="menu-card-price">{item.price.toLocaleString()} сум</span>
+                <span className="menu-card-price">{item.price.toLocaleString()} {t('сум', 'so\'m')}</span>
                 <button
                   className={`menu-card-add-btn${isSel ? ' selected' : ''}`}
                   onClick={() => handleToggleItem(item)}
-                  title={isSel ? 'Убрать' : 'Добавить'}
+                  title={isSel ? t('Убрать', 'Olib tashlash') : t('Добавить', 'Qo\'shish')}
                 >
                   <span className="add-btn-icon">+</span>
                 </button>
@@ -226,7 +236,7 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
 
       {comboItems.length > 0 && (
         <div className="menu-combo-section">
-          <h3 className="combo-title">Комбо-предложения</h3>
+          <h3 className="combo-title">{t('Комбо-предложения', 'Kombo takliflar')}</h3>
           <div className="combo-scroll">
             {comboItems.map(item => {
               const isSel = selected.has(item.id)
@@ -240,11 +250,11 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
                   </div>
                   <div className="combo-card-body">
                     <span className="combo-card-name">{item.name}</span>
-                    <span className="combo-card-price">{item.price.toLocaleString()} сум</span>
+                    <span className="combo-card-price">{item.price.toLocaleString()} {t('сум', 'so\'m')}</span>
                     <button
                       className={`menu-card-add-btn${isSel ? ' selected' : ''}`}
                       onClick={() => handleToggleItem(item)}
-                      title={isSel ? 'Убрать' : 'Добавить'}
+                      title={isSel ? t('Убрать', 'Olib tashlash') : t('Добавить', 'Qo\'shish')}
                     >
                       <span className="add-btn-icon">+</span>
                     </button>
@@ -254,6 +264,18 @@ export default function MenuSelection({ onContinue, onBack, initialSelected, exi
             })}
           </div>
         </div>
+      )}
+
+      {markingFor && (
+        <MarkingModal
+          itemName={markingFor.name}
+          onCancel={() => setMarkingFor(null)}
+          onConfirm={(code) => {
+            setMarkCodes(prev => ({ ...prev, [markingFor.id]: [...(prev[markingFor.id] || []), code] }))
+            handleToggleItem(markingFor, true)
+            setMarkingFor(null)
+          }}
+        />
       )}
     </div>
   )

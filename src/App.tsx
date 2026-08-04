@@ -27,6 +27,7 @@ import type { CashierPaymentData } from './components/CashierPayment'
 import CheckReceipt from './components/CheckReceipt'
 import Profile from './components/Profile'
 import { UpdaterProvider, UpdateModals } from './updater'
+import { useT, tr } from './i18n'
 import type { Screen, Table, OrderItem, KitchenItem, HistoryEntry } from './data/types'
 import { MOCK_ORDER, MOCK_TABLES } from './data/mockData'
 
@@ -45,20 +46,21 @@ interface Staff {
   role: string
 }
 
-const LOADING_STEPS = [
-  { text: 'Инициализация...', progress: 10 },
-  { text: 'Загрузка базы данных...', progress: 25 },
-  { text: 'Подключение к серверу...', progress: 45 },
-  { text: 'Загрузка меню...', progress: 60 },
-  { text: 'Синхронизация данных...', progress: 80 },
-  { text: 'Запуск приложения...', progress: 95 },
+const LOADING_STEPS: [string, string][] = [
+  ['Инициализация...', 'Ishga tushirilmoqda...'],
+  ['Загрузка базы данных...', 'Ma\'lumotlar bazasi yuklanmoqda...'],
+  ['Подключение к серверу...', 'Serverga ulanmoqda...'],
+  ['Загрузка меню...', 'Menyu yuklanmoqda...'],
+  ['Синхронизация данных...', 'Ma\'lumotlar sinxronlanmoqda...'],
+  ['Запуск приложения...', 'Ilova ishga tushirilmoqda...'],
 ]
 
 const SESSION_KEY = 'pos_v2_session'
 
 function App() {
-  const [status, setStatus] = useState(LOADING_STEPS[0].text)
-  const [progress, setProgress] = useState(0)
+  const t = useT()
+  const [status, setStatus] = useState(t(LOADING_STEPS[0][0], LOADING_STEPS[0][1]))
+  const [progress, setProgress] = useState(10)
   const [ready, setReady] = useState(false)
   const [phase, setPhase] = useState<'loading' | 'login' | 'pin' | 'app'>('loading')
   const [staff, setStaff] = useState<Staff | null>(null)
@@ -166,7 +168,7 @@ function App() {
 
   const handleSelectTable = useCallback((table: Table) => {
     if (!shiftActive) {
-      showToast('Сначала начните смену в профиле')
+      showToast(tr('Сначала начните смену в профиле', 'Avval profilingizda smenani boshlang'))
       return
     }
     if (table.status === 'reserved') {
@@ -174,7 +176,7 @@ function App() {
     }
     if (userRole === 'cashier') {
       if (table.status !== 'payment_pending') {
-        showToast('Доступны только столы со статусом Ожидает оплаты')
+        showToast(tr('Доступны только столы со статусом Ожидает оплаты', 'Faqat To\'lov kutilmoqda holatidagi stollar mavjud'))
         return
       }
       loadTableOrder(table)
@@ -257,7 +259,7 @@ function App() {
   }
 
   const handlePrint = useCallback(() => {
-    showToast('Чек отправился на кухню')
+    showToast(tr('Чек отправился на кухню', 'Chek oshxonaga yuborildi'))
     if (selectedTable) {
       saveCurrentOrder()
       setTables(prev => prev.map(t =>
@@ -288,8 +290,34 @@ function App() {
     setCurrentScreen('tables')
   }, [selectedTable, saveCurrentOrder])
 
+  const handleCashierCancelOrder = useCallback((tableId: number) => {
+    setTables(prev => prev.map(t => t.id === tableId ? { ...t, status: 'free' as const } : t))
+    const saved = tableOrders[tableId]
+    const items = saved?.items || []
+    const table = tables.find(t => t.id === tableId)
+    if (table && items.length > 0) {
+      const now = new Date()
+      const dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      setHistory(prev => [{
+        id: Date.now().toString(),
+        tableId: table.id,
+        tableName: table.name,
+        zone: table.zone,
+        timestamp: `${dateStr} ${timeStr}`,
+        itemCount: items.reduce((s, i) => s + i.quantity, 0),
+        total: items.reduce((s, i) => s + i.total, 0),
+        status: 'cancelled',
+        createdByRole: userRole,
+        createdByName: staff?.name,
+        items: items.map(i => ({ id: i.id, name: i.menuItem.name, quantity: i.quantity, unitPrice: i.unitPrice, total: i.total, mxik: i.menuItem.mxik, photo: i.menuItem.photo })),
+      }, ...prev])
+    }
+    setTableOrders(prev => ({ ...prev, [tableId]: { items: [], comment: '', tags: [], modifiers: [], guestCount: 1 } }))
+  }, [tableOrders, tables, userRole, staff])
+
   const handleAvansPrinted = useCallback(() => {
-    showToast('Avans-check выдан')
+    showToast(tr('Avans-check выдан', 'Avans-chek berildi'))
     if (selectedTable) {
       setAvansPrintedSet(prev => new Set(prev).add(selectedTable.id))
     }
@@ -320,7 +348,7 @@ function App() {
       }, ...prev])
     }
     setCurrentScreen('tables')
-    showToast('Чек отправлен на кассу')
+    showToast(tr('Чек отправлен на кассу', 'Chek kassaga yuborildi'))
   }, [selectedTable, showToast, orderItems, saveCurrentOrder, userRole, staff, cpServicePercent])
 
   useEffect(() => {
@@ -328,12 +356,12 @@ function App() {
     const runSteps = async () => {
       for (let i = 0; i < LOADING_STEPS.length; i++) {
         if (cancelled) return
-        setStatus(LOADING_STEPS[i].text)
-        setProgress(LOADING_STEPS[i].progress)
+        setStatus(t(LOADING_STEPS[i][0], LOADING_STEPS[i][1]))
+        setProgress([10, 25, 45, 60, 80, 95][i] || 10)
         await new Promise(r => setTimeout(r, 600 + Math.random() * 400))
       }
       if (!cancelled) {
-        setStatus('Готово!')
+        setStatus(tr('Готово!', 'Tayyor!'))
         setProgress(100)
         setReady(true)
         setTimeout(() => {
@@ -394,7 +422,7 @@ function App() {
           <div className="loading-title">
             POS <span>Terminal</span>
           </div>
-          <div className="loading-subtitle">Виртуальная касса v2</div>
+          <div className="loading-subtitle">{t('Виртуальная касса v2', 'Virtual kassa v2')}</div>
           <div className="loading-dots">
             <div className="loading-dot" />
             <div className="loading-dot" />
@@ -427,7 +455,7 @@ function App() {
   function renderScreen() {
     switch (currentScreen) {
       case 'tables':
-        return <TableMap tables={tables} onSelectTable={handleSelectTable} onUpdateStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} />
+        return <TableMap tables={tables} role={userRole} onSelectTable={handleSelectTable} onCancelOrder={handleCashierCancelOrder} onUpdateStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} />
       case 'menu':
         return (
           <MenuSelection
@@ -490,7 +518,7 @@ function App() {
             orderItems={orderItems}
             table={selectedTable}
             guestCount={orderGuestCount}
-            staffName={staff?.name || 'Пользователь'}
+            staffName={staff?.name || tr('Пользователь', 'Foydalanuvchi')}
             userRole={userRole}
             shiftNumber={shiftNumberStr}
             onBack={() => setCurrentScreen('tables')}
@@ -530,7 +558,7 @@ function App() {
             items={pd.items}
             tableName={pd.tableName}
             guestCount={pd.guestCount}
-            staffName={staff?.name || 'Пользователь'}
+            staffName={staff?.name || tr('Пользователь', 'Foydalanuvchi')}
             userRole={userRole}
             shiftNumber={shiftNumberStr}
             servicePercent={pd.servicePercent}
@@ -584,13 +612,13 @@ function App() {
               setCashierPaymentData(null)
               setCpSplitAmounts(null)
               setCurrentScreen('tables')
-              showToast('Заказ завершен')
+              showToast(tr('Заказ завершен', 'Buyurtma yakunlandi'))
             }}
           />
         ) : null
       }
       case 'admin_dashboard':
-        return <AdminDashboard history={history} tables={tables} />
+        return <AdminDashboard history={history} tables={tables} tableOrders={tableOrders} />
       case 'admin_branches':
         return <AdminBranches />
       case 'admin_tables':
@@ -627,13 +655,13 @@ function App() {
             onShiftEnd={(time) => { updateShift(userRole, { endTime: time, ending: true }); setShiftEndRedirectRole(userRole) }}
             activeTableCount={activeTableCount}
             userRole={userRole}
-            staffName={staff?.name || 'Пользователь'}
+            staffName={staff?.name || tr('Пользователь', 'Foydalanuvchi')}
             staffId={staff ? `${userRole === 'cashier' ? 'CSH' : userRole === 'admin' ? 'ADM' : 'WTR'}-${String(staff.id).padStart(3, '0')}` : '—'}
             shiftNumber={shiftNumber > 0 ? shiftNumberStr : '—'}
           />
         )
       default:
-        return <TableMap tables={tables} onSelectTable={handleSelectTable} onUpdateStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} />
+        return <TableMap tables={tables} role={userRole} onSelectTable={handleSelectTable} onCancelOrder={handleCashierCancelOrder} onUpdateStatus={(id, status) => setTables(prev => prev.map(t => t.id === id ? { ...t, status } : t))} />
     }
   }
 
@@ -642,7 +670,7 @@ function App() {
       <Layout
         currentScreen={currentScreen}
         onNavigate={setCurrentScreen}
-        staffName={staff?.name || 'Пользователь'}
+        staffName={staff?.name || tr('Пользователь', 'Foydalanuvchi')}
         onLogout={() => { localStorage.removeItem(SESSION_KEY); setPhase('login'); setStaff(null) }}
         role={userRole}
       >

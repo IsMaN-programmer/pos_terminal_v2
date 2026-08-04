@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import type { Table, TableStatus } from '../data/types'
 import { TableIcon } from './Icons'
+import { useT } from '../i18n'
 
 const CATEGORIES_KEY = 'pos_v2_zone_categories'
 const ZONE_CATEGORY_KEY = 'pos_v2_zone_category_map'
@@ -19,14 +20,6 @@ function loadZoneCategory(): Record<string, string> {
   } catch { return {} }
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  free: 'Свободен',
-  occupied: 'Занят',
-  ordered: 'Есть заказ',
-  payment_pending: 'Ожидает оплаты',
-  reserved: 'Бронь',
-}
-
 const STATUS_CLASSES: Record<string, string> = {
   free: 'table-free',
   occupied: 'table-occupied',
@@ -41,13 +34,26 @@ interface TableMapProps {
   tables: Table[]
   onSelectTable: (table: Table) => void
   onUpdateStatus: (tableId: number, status: TableStatus) => void
+  role?: string
+  onCancelOrder?: (tableId: number) => void
 }
 
-export default function TableMap({ tables, onSelectTable, onUpdateStatus }: TableMapProps) {
+export default function TableMap({ tables, onSelectTable, onUpdateStatus, role, onCancelOrder }: TableMapProps) {
+  const t = useT()
+  const STATUS_LABELS: Record<string, string> = {
+    free: t('Свободен', 'Bo\'sh'),
+    occupied: t('Занят', 'Band'),
+    ordered: t('Есть заказ', 'Buyurtma bor'),
+    payment_pending: t('Ожидает оплаты', 'To\'lov kutilmoqda'),
+    reserved: t('Бронь', 'Bron'),
+  }
   const [categoryFilter, setCategoryFilter] = useState('Все зоны')
   const [zoneFilter, setZoneFilter] = useState('Все зоны')
   const [search, setSearch] = useState('')
   const [bookingMode, setBookingMode] = useState<BookingMode>(null)
+  const [cancelMode, setCancelMode] = useState(false)
+  const [cancelTarget, setCancelTarget] = useState<Table | null>(null)
+  const isCashier = role === 'cashier'
 
   const allCategories = useMemo(() => loadCategories(), [tables])
   const zoneCategory = useMemo(() => loadZoneCategory(), [tables])
@@ -84,7 +90,17 @@ export default function TableMap({ tables, onSelectTable, onUpdateStatus }: Tabl
       setBookingMode(null)
       return
     }
+    if (cancelMode && (table.status === 'ordered' || table.status === 'occupied')) {
+      setCancelTarget(table)
+      return
+    }
     onSelectTable(table)
+  }
+
+  function confirmCancel() {
+    if (cancelTarget) onCancelOrder?.(cancelTarget.id)
+    setCancelTarget(null)
+    setCancelMode(false)
   }
 
   return (
@@ -92,18 +108,18 @@ export default function TableMap({ tables, onSelectTable, onUpdateStatus }: Tabl
       <div className="screen-header">
         <h1 className="screen-title">
           <TableIcon />
-          Карта столов
+          {t('Карта столов', 'Stollar xaritasi')}
         </h1>
       </div>
 
       <div className="table-map-toolbar">
         <div className="toolbar-filters">
           <select className="toolbar-select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-            <option>Все зоны</option>
-            {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            <option value="Все зоны">{t('Все зоны', 'Barcha zonalar')}</option>
+            {allCategories.map(c => <option key={c} value={c}>{c === 'Основная зона' ? t('Основная зона', 'Asosiy zona') : c}</option>)}
           </select>
           <select className="toolbar-select" value={zoneFilter} onChange={e => setZoneFilter(e.target.value)}>
-            <option>Все зоны</option>
+            <option value="Все зоны">{t('Все зоны', 'Barcha zonalar')}</option>
             {zonesInCategory.map(z => <option key={z} value={z}>{z}</option>)}
           </select>
         </div>
@@ -113,7 +129,7 @@ export default function TableMap({ tables, onSelectTable, onUpdateStatus }: Tabl
           </svg>
           <input
             type="text"
-            placeholder="Поиск стола или зоны..."
+            placeholder={t('Поиск стола или зоны...', 'Stol yoki zonani qidirish...')}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -125,14 +141,23 @@ export default function TableMap({ tables, onSelectTable, onUpdateStatus }: Tabl
           className={`booking-btn booking-btn-reserve${bookingMode === 'reserve' ? ' active' : ''}`}
           onClick={() => setBookingMode(bookingMode === 'reserve' ? null : 'reserve')}
         >
-          Забронировать
+          {t('Забронировать', 'Bron qilish')}
         </button>
         <button
           className={`booking-btn booking-btn-unreserve${bookingMode === 'unreserve' ? ' active' : ''}`}
           onClick={() => setBookingMode(bookingMode === 'unreserve' ? null : 'unreserve')}
         >
-          Отменить Бронь
+          {t('Отменить Бронь', 'Bronni bekor qilish')}
         </button>
+        {isCashier && (
+          <button
+            className={`booking-btn booking-btn-cancel${cancelMode ? ' active' : ''}`}
+            onClick={() => setCancelMode(!cancelMode)}
+            style={{ marginLeft: 'auto', flex: '0 0 auto', padding: '14px 28px' }}
+          >
+            {t('Отменить заказ', 'Buyurtmani bekor qilish')}
+          </button>
+        )}
       </div>
 
       <div className="table-map-content">
@@ -144,7 +169,8 @@ export default function TableMap({ tables, onSelectTable, onUpdateStatus }: Tabl
                 {zoneTables.map(table => {
                   const isReservable = bookingMode === 'reserve' && table.status === 'free'
                   const isUnreservable = bookingMode === 'unreserve' && table.status === 'reserved'
-                  const highlightClass = isReservable ? ' table-highlight-reserve' : isUnreservable ? ' table-highlight-unreserve' : ''
+                  const isCancelable = cancelMode && (table.status === 'ordered' || table.status === 'occupied')
+                  const highlightClass = isReservable ? ' table-highlight-reserve' : isUnreservable ? ' table-highlight-unreserve' : isCancelable ? ' table-highlight-cancel' : ''
                   return (
                     <button
                       key={table.id}
@@ -170,6 +196,21 @@ export default function TableMap({ tables, onSelectTable, onUpdateStatus }: Tabl
           </div>
         ))}
       </div>
+
+      {cancelTarget && (
+        <div className="modal-overlay" onClick={() => setCancelTarget(null)}>
+          <div className="modal-content" style={{ width: 480 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-title">{t('Отмена заказа', 'Buyurtmani bekor qilish')}</div>
+            <div className="modal-text">
+              {t(`Вы точно хотите отменить заказ на столе «${cancelTarget.name}»?`, `«${cancelTarget.name}» stolidagi buyurtmani bekor qilmoqchimisiz?`)}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn cancel" onClick={() => setCancelTarget(null)}>{t('Нет', "Yo'q")}</button>
+              <button className="modal-btn save" onClick={confirmCancel}>{t('Да', 'Ha')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -112,6 +112,26 @@ app.all("/api/cabinet-proxy/*", async (req, res) => {
   }
 });
 
+app.all("/api/marking-proxy/*", async (req, res) => {
+  const proxyPath = req.url.replace("/api/marking-proxy/", "");
+  try {
+    const tasnifBase = "https://tasnif.soliq.uz/api/cl-api/marking";
+    const auth = req.headers.authorization || "";
+    const headers = { "Content-Type": "application/json" };
+    if (auth) headers["Authorization"] = auth;
+    const fdRes = await fetch(`${tasnifBase}/${proxyPath}`, {
+      method: req.method,
+      headers,
+      body: req.method !== "GET" ? JSON.stringify(req.body || {}) : undefined
+    });
+    const text = await fdRes.text();
+    try { res.status(fdRes.status).json(JSON.parse(text)); }
+    catch { res.status(fdRes.status).send(text); }
+  } catch (e) {
+    res.status(502).json({ error: "Marking API unavailable", message: e.message });
+  }
+});
+
 app.post("/api/fiscal-register-receipt/:factoryId", async (req, res) => {
   const { factoryId } = req.params;
   const receipt = req.body;

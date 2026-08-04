@@ -1,6 +1,8 @@
 const W58 = 32
 const W80 = 48
 
+import { tr } from '../i18n'
+
 function width(paperSize: string): number {
   return paperSize === '80' ? W80 : W58
 }
@@ -54,14 +56,14 @@ export function formatKitchenReceipt(data: {
   r.push(sep('=', W))
   r.push(center(data.kitchenName, W))
   r.push(sep('=', W))
-  r.push(lr('Стол:', data.tableLabel, W))
-  r.push(lr('Гости:', String(data.guestCount), W))
-  r.push(lr('Время:', data.dateStr + ' ' + data.timeStr, W))
+  r.push(lr(tr('Стол:', 'Stol:'), data.tableLabel, W))
+  r.push(lr(tr('Гости:', 'Mehmonlar:'), String(data.guestCount), W))
+  r.push(lr(tr('Время:', 'Vaqt:'), data.dateStr + ' ' + data.timeStr, W))
   r.push(sep('-', W))
   const note = [...(data.orderTags || []), ...(data.orderComment ? [data.orderComment] : [])].join(' · ')
   if (note) r.push(note.length > W ? note.slice(0, W - 1) + '…' : note)
   if (data.orderModifiers && data.orderModifiers.length > 0) {
-    const mods = 'Модификаторы: ' + data.orderModifiers.join(', ')
+    const mods = tr('Модификаторы:', 'Modifikatorlar:') + ' ' + data.orderModifiers.join(', ')
     r.push(mods.length > W ? mods.slice(0, W - 1) + '…' : mods)
   }
   for (const item of data.items) {
@@ -70,8 +72,8 @@ export function formatKitchenReceipt(data: {
     if (item.comment) r.push('> ' + item.comment.slice(0, W - 3))
   }
   r.push(sep('-', W))
-  r.push(center('Заказ отправляется', W))
-  r.push(center('на кухню', W))
+  r.push(center(tr('Заказ отправляется', 'Buyurtma yuborilmoqda'), W))
+  r.push(center(tr('на кухню', 'oshxonaga'), W))
   r.push(sep('=', W))
   r.push('', '')
   return r.join('\r\n')
@@ -93,10 +95,10 @@ export function formatAvansReceipt(data: {
   r.push(sep('=', W))
   r.push(lr('STIR: ' + (data.orgStir || '—'), '', W))
   r.push(lr(data.dateStr, data.timeStr, W))
-  r.push(lr('Заказ: #' + data.orderNum, '', W))
-  r.push(lr('Стол: ' + data.tableLabel, 'Гости: ' + data.guestCount, W))
+  r.push(lr(tr('Заказ: #', 'Buyurtma: #') + data.orderNum, '', W))
+  r.push(lr(tr('Стол:', 'Stol:') + ' ' + data.tableLabel, tr('Гости:', 'Mehmonlar:') + ' ' + data.guestCount, W))
   r.push(lr(data.roleLabel + ': ' + data.staffName, '', W))
-  r.push(lr('Смена:', data.shiftNumber, W))
+  r.push(lr(tr('Смена:', 'Smena:'), data.shiftNumber, W))
   r.push(sep('-', W))
 
   for (const item of data.items) {
@@ -106,12 +108,12 @@ export function formatAvansReceipt(data: {
   }
 
   r.push(sep('-', W))
-  r.push(lr('ИТОГО:', data.total.toLocaleString() + ' сум', W))
+  r.push(lr(tr('ИТОГО:', 'JAMI:'), data.total.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
   r.push(lr('QQS 12%:', data.vat.toLocaleString(), W))
   r.push(sep('-', W))
-  r.push(lr('Терминал ID:', data.fmTerminalId || 'TERM-001', W))
+  r.push(lr(tr('Терминал ID:', 'Terminal ID:'), data.fmTerminalId || 'TERM-001', W))
   r.push(sep('=', W))
-  r.push(center('Спасибо! Ждём вас снова.', W))
+  r.push(center(tr('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.'), W))
   r.push(sep('=', W))
   r.push('', '')
   return r.join('\r\n')
@@ -136,10 +138,10 @@ export function formatFiscalReceipt(data: {
   r.push(sep('=', W))
   r.push(lr('STIR: ' + (data.orgStir || '—'), '', W))
   r.push(lr(data.dateStr, data.timeStr, W))
-  r.push(lr('Заказ: #' + data.orderNum, '', W))
-  r.push(lr('Стол: ' + data.tableLabel, 'Гости: ' + data.guestCount, W))
+  r.push(lr(tr('Заказ: #', 'Buyurtma: #') + data.orderNum, '', W))
+  r.push(lr(tr('Стол:', 'Stol:') + ' ' + data.tableLabel, tr('Гости:', 'Mehmonlar:') + ' ' + data.guestCount, W))
   r.push(lr(data.roleLabel + ': ' + data.staffName, '', W))
-  r.push(lr('Смена:', data.shiftNumber, W))
+  r.push(lr(tr('Смена:', 'Smena:'), data.shiftNumber, W))
   r.push(sep('-', W))
 
   for (const item of data.items) {
@@ -148,31 +150,31 @@ export function formatFiscalReceipt(data: {
   }
 
   r.push(sep('-', W))
-  r.push(lr('Общая сумма', data.totalSum.toLocaleString() + ' сум', W))
-  r.push(lr('Сервис (' + data.servicePercent + '%)', data.serviceAmount.toLocaleString() + ' сум', W))
+  r.push(lr(tr('Общая сумма', 'Umumiy summa'), data.totalSum.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
+  r.push(lr(tr('Сервис', 'Xizmat') + ' (' + data.servicePercent + '%)', data.serviceAmount.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
   if (data.discountValue > 0) {
-    r.push(lr('Скидка', '-' + data.discountValue.toLocaleString() + ' сум', W))
+    r.push(lr(tr('Скидка', 'Chegirma'), '-' + data.discountValue.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
   }
-  r.push(lr('QQS (12%)', data.qqsAmount.toLocaleString() + ' сум', W))
+  r.push(lr('QQS (12%)', data.qqsAmount.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
   r.push(sep('-', W))
-  r.push(lr('ИТОГО:', data.итого.toLocaleString() + ' сум', W))
+  r.push(lr(tr('ИТОГО:', 'JAMI:'), data.итого.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
 
   if (data.splitAmounts) {
     r.push(sep('-', W))
-    if (data.splitAmounts.cash > 0) r.push(lr('Наличной', data.splitAmounts.cash.toLocaleString() + ' сум', W))
-    if (data.splitAmounts.card > 0) r.push(lr('Карта', data.splitAmounts.card.toLocaleString() + ' сум', W))
-    if (data.splitAmounts.click > 0) r.push(lr('Click/Payme', data.splitAmounts.click.toLocaleString() + ' сум', W))
+    if (data.splitAmounts.cash > 0) r.push(lr(tr('Наличной', 'Naqd'), data.splitAmounts.cash.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
+    if (data.splitAmounts.card > 0) r.push(lr(tr('Карта', 'Karta'), data.splitAmounts.card.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
+    if (data.splitAmounts.click > 0) r.push(lr(tr('Другое', 'Boshqa'), data.splitAmounts.click.toLocaleString() + ' ' + tr('сум', 'so\'m'), W))
   } else {
-    r.push(lr('Выбор оплаты', data.selectedMethod, W))
+    r.push(lr(tr('Выбор оплаты', 'To\'lov usuli'), data.selectedMethod, W))
   }
 
   r.push(sep('-', W))
   if (data.qrCodeUrl) r.push(center('QR: ' + data.qrCodeUrl, W))
   r.push(sep('-', W))
-  r.push(lr('Терминал ID:', data.fmTerminalId || 'TERM-001', W))
-  if (data.fiscalSign) r.push(lr('Фиск.признак:', data.fiscalSign, W))
+  r.push(lr(tr('Терминал ID:', 'Terminal ID:'), data.fmTerminalId || 'TERM-001', W))
+  if (data.fiscalSign) r.push(lr(tr('Фиск.признак:', 'Fisk. belgi:'), data.fiscalSign, W))
   r.push(sep('=', W))
-  r.push(center('Спасибо! Ждём вас снова.', W))
+  r.push(center(tr('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.'), W))
   r.push(sep('=', W))
   r.push('', '')
   return r.join('\r\n')

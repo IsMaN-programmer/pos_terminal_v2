@@ -9,6 +9,7 @@ declare global {
       downloadUpdate: () => Promise<UpdateState>
       quitAndInstall: () => Promise<boolean>
       onUpdateStatus: (cb: (s: UpdateState) => void) => () => void
+      generatePdf: (html: string) => Promise<string>
     }
   }
 

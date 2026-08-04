@@ -3,6 +3,8 @@ import type { OrderItem } from '../data/types'
 import { OrderIcon } from './Icons'
 import CommentModal from './CommentModal'
 import ModifierModal from './ModifierModal'
+import MarkingModal from './MarkingModal'
+import { useT, locale } from '../i18n'
 
 interface OrderWindowProps {
   items: OrderItem[]
@@ -21,10 +23,6 @@ interface OrderWindowProps {
   orderModifiers?: string[]
   onOrderModifiersChange?: (v: string[]) => void
 }
-
-const now = new Date()
-const dateStr = now.toLocaleDateString('ru-RU')
-const timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
 
 interface StockGood {
   id: number; name: string; mxik: string; unit: string; sum: number;
@@ -59,11 +57,23 @@ export default function OrderWindow({
   orderComment = '', onOrderCommentChange, orderTags = [], onOrderTagsChange,
   orderModifiers = [], onOrderModifiersChange,
 }: OrderWindowProps) {
+  const t = useT()
+  const now = new Date()
+  const dateStr = now.toLocaleDateString(locale())
+  const timeStr = now.toLocaleTimeString(locale(), { hour: '2-digit', minute: '2-digit' })
   const [showCommentModal, setShowCommentModal] = useState(false)
   const [showModifierModal, setShowModifierModal] = useState(false)
+  const [markingFor, setMarkingFor] = useState<number | null>(null)
   const stockMap = loadStockMap()
 
   function updateQuantity(id: number, delta: number) {
+    if (delta > 0) {
+      const target = items.find(item => item.id === id)
+      if (target?.menuItem.mxikMarking) {
+        setMarkingFor(id)
+        return
+      }
+    }
     onItemsChange(items.map(item => {
       if (item.id !== id) return item
       const stockKey = item.menuItem.name.toLowerCase()
@@ -99,6 +109,7 @@ export default function OrderWindow({
 
   const hasComment = orderComment || orderTags.length > 0
   const grandTotal = items.reduce((sum, item) => sum + item.total, 0)
+  const markingItem = markingFor !== null ? items.find(item => item.id === markingFor) : null
 
   return (
     <div className="screen order-screen">
@@ -117,27 +128,53 @@ export default function OrderWindow({
           onCancel={() => setShowModifierModal(false)}
         />
       )}
+      {markingItem && (
+        <MarkingModal
+          itemName={markingItem.menuItem.name}
+          onCancel={() => setMarkingFor(null)}
+          onConfirm={(code) => {
+            onItemsChange(items.map(item => {
+              if (item.id !== markingItem.id) return item
+              const stockKey = item.menuItem.name.toLowerCase()
+              const stock = stockMap[stockKey]
+              let newQty = item.quantity + 1
+              if (stock && !stock.unlimited && stock.quantity != null) {
+                const factor = getUnitFactor(stock.unit)
+                const maxQty = factor > 0 ? Math.floor(stock.quantity / factor) : 999999
+                newQty = Math.min(newQty, maxQty)
+              }
+              return {
+                ...item,
+                quantity: newQty,
+                total: newQty * item.unitPrice,
+                markCodes: [...(item.markCodes || []), code],
+              }
+            }))
+            setMarkingFor(null)
+          }}
+        />
+      )}
       <div className="screen-header">
         <h1 className="screen-title">
           <OrderIcon />
-          Окно заказа
+          {t('Окно заказа', 'Buyurtma oynasi')}
         </h1>
         <div className="menu-header-btns">
           {onBack && (
-            <button className="menu-header-btn back" onClick={onBack}>Назад</button>
+            <button className="menu-header-btn back" onClick={onBack}>{t('Назад', 'Orqaga')}</button>
           )}
           {onSendToKitchen && (
-            <button className="menu-header-btn continue" onClick={onSendToKitchen}>Продолжить</button>
+            <button className="menu-header-btn continue" onClick={onSendToKitchen}>{t('Продолжить', 'Davom etish')}</button>
           )}
           {onPayment && (
-            <button className="menu-header-btn continue" onClick={onPayment}>Продолжить</button>
+            <button className="menu-header-btn continue" onClick={onPayment}>{t('Продолжить', 'Davom etish')}</button>
           )}
         </div>
       </div>
 
       <div className="order-info-bar">
         <div className="order-info-item">
-          <span className="order-info-label">Стол:</span>
+          <span className="order-info-label">{t('Стол:', 'Stol:')}</span>
           <span className="order-info-value">{tableName}</span>
         </div>
         <div className="order-info-item">
@@ -151,23 +188,23 @@ export default function OrderWindow({
             <span className="qty-value">{guestCount}</span>
             <button className="qty-btn" onClick={() => onGuestCountChange?.(guestCount + 1)}>+</button>
           </div>
-          <span style={{ marginLeft: 4 }}>чел.</span>
+          <span style={{ marginLeft: 4 }}>{t('чел.', 'kishi')}</span>
         </div>
         <div className="order-info-item">
           <span>{dateStr}</span>
           <span className="order-info-time">{timeStr}</span>
         </div>
-        <button className="order-change-table-btn" onClick={onChangeTable}>Сменить стол</button>
+        <button className="order-change-table-btn" onClick={onChangeTable}>{t('Сменить стол', 'Stolni almashtirish')}</button>
       </div>
 
       <div className="order-table-wrap">
         <table className="order-table">
           <thead>
             <tr>
-              <th>Блюдо</th>
-              <th>Кол-во</th>
-              <th>Цена</th>
-              <th>Итого</th>
+              <th>{t('Блюдо', 'Taom')}</th>
+              <th>{t('Кол-во', 'Soni')}</th>
+              <th>{t('Цена', 'Narx')}</th>
+              <th>{t('Итого', 'Jami')}</th>
               <th></th>
             </tr>
           </thead>
@@ -205,12 +242,12 @@ export default function OrderWindow({
 
       <div className="order-bottom">
         <div className="order-footer-actions">
-          <button className={`order-action-btn${hasComment ? ' modified' : ' primary'}`} onClick={() => setShowCommentModal(true)}>{hasComment ? '✎ Изменить комментарий' : '+ Добавить комментарий'}</button>
-          <button className={`order-action-btn${orderModifiers.length > 0 ? ' modified' : ' primary'}`} onClick={() => setShowModifierModal(true)}>{orderModifiers.length > 0 ? '✎ Изменить модификаторы' : '+ Модификатор'}</button>
+          <button className={`order-action-btn${hasComment ? ' modified' : ' primary'}`} onClick={() => setShowCommentModal(true)}>{hasComment ? t('✎ Изменить комментарий', '✎ Izohni o\'zgartirish') : t('+ Добавить комментарий', '+ Izoh qo\'shish')}</button>
+          <button className={`order-action-btn${orderModifiers.length > 0 ? ' modified' : ' primary'}`} onClick={() => setShowModifierModal(true)}>{orderModifiers.length > 0 ? t('✎ Изменить модификаторы', '✎ Modifikatorlarni o\'zgartirish') : t('+ Модификатор', '+ Modifikator')}</button>
         </div>
         <div className="order-grand-total">
-          <span className="grand-total-label">Итого:</span>
-          <span className="grand-total-value">{grandTotal.toLocaleString()} сум</span>
+          <span className="grand-total-label">{t('Итого:', 'Jami:')}</span>
+          <span className="grand-total-value">{grandTotal.toLocaleString()} {t('сум', 'so\'m')}</span>
         </div>
       </div>
     </div>

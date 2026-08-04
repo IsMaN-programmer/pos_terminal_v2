@@ -11,4 +11,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('update:status', listener)
     return () => ipcRenderer.removeListener('update:status', listener)
   },
+  generatePdf: (html) => ipcRenderer.invoke('pdf:generate', html),
 })
