@@ -90,6 +90,20 @@ cd android
 - iOS не поддерживается для SPP-принтеров (Apple не даёт API
   классического Bluetooth) — только Android.
 
+## Релиз (.exe + .apk в одном теге)
+
+Десктоп обновляется через `latest.yml`, мобайл ищет `.apk` в latest-релизе:
+
+1. Подними версию в `package.json` и `android/app/build.gradle`
+   (`versionCode` +1, `versionName` = версия).
+2. `npm run publish` — соберёт и зальёт `.exe` (+`latest.yml`).
+   В `package.json → build.publish` стоит `"releaseType": "release"`,
+   иначе builder пропустит уже опубликованный релиз.
+3. `npm run mobile:sync` + сборка APK в `android/`, залей его
+   в тот же релиз (имя `POS-Terminal-v2-<версия>.apk`).
+4. Пометка `[required]` в тексте релиза = принудительное обновление
+   на обеих платформах.
+
 ## Если что-то пошло не так
 
 - Список принтеров пуст → проверьте сопряжение в настройках Bluetooth
