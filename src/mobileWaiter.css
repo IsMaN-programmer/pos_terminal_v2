@@ -1,4 +1,16 @@
 /* Only the native waiter APK: keep desktop layout unchanged. */
+.waiter-mobile .pin-overlay { position: fixed; }
+.waiter-mobile .pin-lang-btn {
+  position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: 12px; z-index: 5;
+  display: flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 10px 14px;
+  border-radius: 12px; border: 1px solid #e2e8f0;
+  background: #ffffff; color: #1e293b;
+  font-size: 14px; font-weight: 800; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both;
+}
+.waiter-mobile .pin-lang-btn:active { transform: scale(0.97); }
 .waiter-mobile .pin-overlay,
 .waiter-mobile .login-overlay { overflow-y: auto; align-items: flex-start; }
 .waiter-mobile .pin-container,
@@ -65,8 +77,14 @@
   .waiter-mobile .history-pagination-btns { display: none; }
   .waiter-mobile .history-pagination-mobile { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .waiter-mobile .history-pagination-mobile .page-btn { width: 36px; height: 36px; }
-  .waiter-mobile .sidebar-btn { flex: 1 1 0; min-width: 0; }
-  .waiter-mobile .sidebar-profile-btn { width: 52px; max-width: 52px; }
-  .waiter-mobile .sidebar-bottom { margin-left: 2px; padding-left: 2px; }
+  .waiter-mobile .sidebar { gap: 2px; }
+  .waiter-mobile .sidebar-nav { flex: 4 1 0; min-width: 0; }
+  .waiter-mobile .sidebar-btn { flex: 1 1 0; min-width: 0; max-width: none; width: auto; }
+  .waiter-mobile .sidebar-bottom {
+    flex: 1 1 0; min-width: 0; margin: 0; padding: 0;
+    border-left: none; display: flex; align-items: stretch;
+  }
+  .waiter-mobile .sidebar-profile-btn { flex: 1 1 0; width: auto; min-width: 0; max-width: none; }
+  .waiter-mobile .sidebar-profile-btn .sidebar-label { max-width: 100%; }
   .waiter-mobile .pin-right { padding: 20px 12px; }
 }

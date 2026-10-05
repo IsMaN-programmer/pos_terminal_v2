@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { dataStore } from './services/dataStore'
-import { useT } from './i18n'
+import { useT, getLang, setLang, type Lang } from './i18n'
+import { isNativeMobile } from './services/capacitor'
+
+const PIN_LANGS: Lang[] = ['ru', 'uz', 'en']
+const PIN_LANG_SHORT: Record<Lang, string> = { ru: 'RU', uz: 'UZ', en: 'EN' }
 
 interface Staff {
   id: number
@@ -58,6 +62,13 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
 
     if (next.length === 4) {
       if (step === 'setup') {
+        // Mobile app is waiters-only: staff is managed on the desktop
+        // cash register, never create a local admin here.
+        if (isNativeMobile()) {
+          setError(t('Официантов нет. Создайте их в админ-панели на кассе, вкладка «Роли».', 'Ofitsiantlar yo‘q. Ularni kassadagi admin-panelda, «Rollar» bo‘limida yarating.', 'No waiters found. Create them in the admin panel on the cash register, Roles tab.'))
+          setTimeout(() => { pinRef.current = ''; setPin('') }, 1200)
+          return
+        }
         const nextId = Math.max(...staff.map(s => s.id), 0) + 1
         const account: Staff = { id: nextId, name: t('Администратор', 'Administrator', 'Administrator'), pin: next, role: 'admin' }
         const updated = [...staff, account]
@@ -68,7 +79,10 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
         setPin('')
       } else {
         const found = staff.find(s => s.pin === next)
-        if (found) {
+        if (found && isNativeMobile() && found.role !== 'waiter') {
+          setError(t('Другие роли недоступны', 'Boshqa rollar mavjud emas', 'Other roles are not available'))
+          setTimeout(() => { pinRef.current = ''; setPin('') }, 1200)
+        } else if (found) {
           onComplete(found)
         } else {
           setError(t('Неверный PIN-код', 'PIN-kod noto\'g\'ri', 'Invalid PIN'))
@@ -90,6 +104,24 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
 
   return (
     <div className="pin-overlay">
+      {isNativeMobile() && (
+        <button
+          type="button"
+          className="pin-lang-btn"
+          onClick={() => {
+            const cur = getLang()
+            setLang(PIN_LANGS[(PIN_LANGS.indexOf(cur) + 1) % PIN_LANGS.length])
+          }}
+          title="Language / Til / Язык"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+          </svg>
+          <span>{PIN_LANG_SHORT[getLang()]}</span>
+        </button>
+      )}
       <div className="pin-container">
         <div className="pin-left">
           <div className="pin-left-content">

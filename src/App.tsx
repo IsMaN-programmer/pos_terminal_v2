@@ -896,6 +896,8 @@ function App() {
 
   if (phase === 'pin') {
     return <PinScreen onComplete={(s) => {
+      // Hard guard: mobile APK is waiters-only (admin/cashier stay on desktop).
+      if (isNativeMobile() && s.role !== 'waiter') return
       try {
         const directory: Staff[] = JSON.parse(dataStore.getItem('pos_v2_staff') || '[]')
         if (Array.isArray(directory)) setTableOrders(prev => migrateOrderOwners(prev, directory))

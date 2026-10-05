@@ -34,7 +34,6 @@
     "sql.js": "^1.11.0"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3.0.5",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -84,7 +83,10 @@
   },
   "allowScripts": {
     "esbuild@0.25.12": true,
-    "electron-winstaller@5.4.0": true,
-    "sharp@0.32.6": true
+    "electron-winstaller@5.4.0": true
+  },
+  "overrides": {
+    "tar": "^7.5.22",
+    "uuid": "^11.1.1"
   }
 }
