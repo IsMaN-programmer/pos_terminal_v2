@@ -1,0 +1,18 @@
+{
+  "role": "master",
+  "masterIp": "",
+  "printers": {
+    "receipt": {
+      "terminal": "",
+      "printer": "GP-5830 Series"
+    },
+    "kitchen": {
+      "terminal": "",
+      "printer": "GP-5830 Series"
+    },
+    "waiter": {
+      "terminal": "",
+      "printer": "GP-5830 Series"
+    }
+  }
+}

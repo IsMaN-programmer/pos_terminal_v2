@@ -12,4 +12,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('update:status', listener)
   },
   generatePdf: (html) => ipcRenderer.invoke('pdf:generate', html),
+  getNetworkConfig: () => ipcRenderer.invoke('network:get-config'),
+  setSlaveMode: (masterIp) => ipcRenderer.invoke('network:set-slave', masterIp),
+  resetNetworkMode: () => ipcRenderer.invoke('network:reset'),
+  restartApp: () => ipcRenderer.invoke('app:restart'),
+  exitFullscreen: () => ipcRenderer.invoke('window:exit-fullscreen'),
 })

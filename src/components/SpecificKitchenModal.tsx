@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
+import { dataStore } from '../services/dataStore'
 import type { KitchenItem } from '../data/types'
 import { getConnectedPrinters } from '../utils/printService'
 import { useT } from '../i18n'
 function getPhoto(name: string): string | undefined {
   try {
-    const raw = localStorage.getItem('pos_v2_menu')
+    const raw = dataStore.getItem('pos_v2_menu')
     const items = raw ? JSON.parse(raw) : []
     const item = items.find((m: any) => m.name === name)
     return item?.photo || undefined
@@ -30,16 +31,16 @@ export default function SpecificKitchenModal({
   const t = useT()
   const [step, setStep] = useState<Step>('select')
   const [selected, setSelected] = useState<Set<number>>(new Set(items.map(i => i.id)))
-  const [printer, setPrinter] = useState<string>(localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY) || '')
-  const [paperSize, setPaperSize] = useState<string>(localStorage.getItem(KITCHEN_PAPER_KEY) || '58')
+  const [printer, setPrinter] = useState<string>(dataStore.getItem(KITCHEN_PRINTERS_KEY) || dataStore.getItem(PRINTERS_KEY) || '')
+  const [paperSize, setPaperSize] = useState<string>(dataStore.getItem(KITCHEN_PAPER_KEY) || '58')
   const [printers, setPrinters] = useState<string[]>(() => {
-    const saved = localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY)
+    const saved = dataStore.getItem(KITCHEN_PRINTERS_KEY) || dataStore.getItem(PRINTERS_KEY)
     return saved ? [saved] : []
   })
 
   useEffect(() => {
     getConnectedPrinters().then(list => {
-      const saved = localStorage.getItem(KITCHEN_PRINTERS_KEY) || localStorage.getItem(PRINTERS_KEY)
+      const saved = dataStore.getItem(KITCHEN_PRINTERS_KEY) || dataStore.getItem(PRINTERS_KEY)
       setPrinters(saved && !list.includes(saved) ? [saved, ...list] : list)
     })
   }, [])
@@ -77,7 +78,7 @@ export default function SpecificKitchenModal({
           <>
             <div className="skm-header">
               <h3 className="skm-title">{kitchenName}</h3>
-              <p className="skm-subtitle">{t('Выберите блюда для отправки', "Yuborish uchun taomlarni tanlang")}</p>
+              <p className="skm-subtitle">{t('Выберите блюда для отправки', 'Yuborish uchun taomlarni tanlang', 'Select dishes to send')}</p>
             </div>
             <div className="skm-body">
               <div className="skm-items-list">
@@ -109,13 +110,13 @@ export default function SpecificKitchenModal({
               </div>
             </div>
             <div className="skm-actions">
-              <button className="skm-btn back" onClick={onBack}>{t('Отмена', 'Bekor qilish')}</button>
+              <button className="skm-btn back" onClick={onBack}>{t('Отмена', 'Bekor qilish', 'Cancel')}</button>
               <button
                 className="skm-btn primary"
                 onClick={handleConfirmSelection}
                 disabled={selected.size === 0}
               >
-                {t('Далее', 'Keyingi')}
+                {t('Далее', 'Keyingi', 'Next')}
               </button>
             </div>
           </>
@@ -124,20 +125,20 @@ export default function SpecificKitchenModal({
         {step === 'printer' && (
           <>
             <div className="skm-header">
-              <h3 className="skm-title">{t('Выбор принтера', 'Printerni tanlash')}</h3>
-              <p className="skm-subtitle">{t('На каком принтере печатать чек?', 'Chek qaysi printerda chop etiladi?')}</p>
+              <h3 className="skm-title">{t('Выбор принтера', 'Printerni tanlash', 'Printer selection')}</h3>
+              <p className="skm-subtitle">{t('На каком принтере печатать чек?', 'Chek qaysi printerda chop etiladi?', 'Which printer should print the receipt?')}</p>
             </div>
             <div className="skm-body">
               <div className="skm-printer-block">
                 <div className="skm-printer-group">
-                  <label>{t('Принтер', 'Printer')}</label>
+                  <label>{t('Принтер', 'Printer', 'Printer')}</label>
                   <select className="admin-settings-printer-select" value={printer} onChange={e => setPrinter(e.target.value)}>
-                    <option value="">{t('— Выберите принтер —', '— Printerni tanlang —')}</option>
+                    <option value="">{t('— Выберите принтер —', '— Printerni tanlang —', '— Select printer —')}</option>
                     {printers.map(p => <option key={p} value={p}>{p}</option>)}
                   </select>
                 </div>
                 <div className="skm-printer-group">
-                  <label>{t('Формат бумаги', "Qog'oz formati")}</label>
+                  <label>{t('Формат бумаги', 'Qog\'oz formati', 'Paper format')}</label>
                   <select className="admin-settings-printer-select" value={paperSize} onChange={e => setPaperSize(e.target.value)}>
                     <option value="58">58 мм</option>
                     <option value="80">80 мм</option>
@@ -145,17 +146,17 @@ export default function SpecificKitchenModal({
                 </div>
               </div>
               <div className="skm-summary">
-                {t('Будет напечатано блюд:', 'Chop etiladigan taomlar:')} <b>{selectedItems.length}</b>
+                {t('Будет напечатано блюд:', 'Chop etiladigan taomlar:', 'Dishes to be printed:')} <b>{selectedItems.length}</b>
               </div>
             </div>
             <div className="skm-actions">
-              <button className="skm-btn back" onClick={() => setStep('select')}>{t('Назад', 'Orqaga')}</button>
+              <button className="skm-btn back" onClick={() => setStep('select')}>{t('Назад', 'Orqaga', 'Back')}</button>
               <button
                 className="skm-btn primary"
                 onClick={handleConfirmPrinter}
                 disabled={!printer}
               >
-                {t('Печатать', 'Chop etish')}
+                {t('Печатать', 'Chop etish', 'Print')}
               </button>
             </div>
           </>

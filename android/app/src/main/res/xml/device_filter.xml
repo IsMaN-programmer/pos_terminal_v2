@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Feitian fiscal-module smartcard reader (same VID as posvk_mobile) -->
+    <usb-device vendor-id="2414" />
+    <usb-device vendor-id="1254" product-id="22556" />
+</resources>

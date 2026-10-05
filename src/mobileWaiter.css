@@ -1,0 +1,72 @@
+/* Only the native waiter APK: keep desktop layout unchanged. */
+.waiter-mobile .pin-overlay,
+.waiter-mobile .login-overlay { overflow-y: auto; align-items: flex-start; }
+.waiter-mobile .pin-container,
+.waiter-mobile .login-container { flex-shrink: 0; }
+.waiter-mobile .pin-card { overflow: visible; }
+.waiter-mobile .modal-content { max-width: calc(100vw - 24px); }
+.waiter-mobile .pin-network-link { margin: 10px auto 0; padding: 8px; border: 0; background: transparent; color: #2563eb; text-decoration: underline; cursor: pointer; font: inherit; }
+.waiter-mobile .pin-network-dialog { width: min(420px, calc(100vw - 24px)); max-height: 85dvh; overflow-y: auto; }
+.waiter-mobile .mobile-connect-screen {
+  min-height: 100dvh; padding: 28px 18px 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: #f8fafc; overflow-y: auto;
+}
+.waiter-mobile .mobile-connect-card {
+  width: min(100%, 420px); padding: 30px 24px; background: #fff;
+  border: 1px solid #e2e8f0; border-radius: 20px;
+  box-shadow: 0 12px 36px rgba(15, 23, 42, .08);
+}
+.waiter-mobile .mobile-connect-logo { width: 64px; height: 64px; object-fit: contain; margin-bottom: 18px; }
+.waiter-mobile .mobile-connect-card h1 { font-size: 22px; margin-bottom: 12px; }
+.waiter-mobile .mobile-connect-card p { font-size: 14px; line-height: 1.5; color: #64748b; margin-bottom: 18px; }
+.waiter-mobile .mobile-connect-card .mobile-connect-host { font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+.waiter-mobile .mobile-connect-card .mobile-connect-status { color: #dc2626; font-weight: 700; }
+.waiter-mobile .mobile-connect-card .mobile-connect-status.connected { color: #16a34a; }
+.waiter-mobile .mobile-connect-card .mobile-connect-error { color: #dc2626; }
+.waiter-mobile .mobile-connect-card label { display: block; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.waiter-mobile .mobile-connect-card input { width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font: inherit; margin-bottom: 14px; }
+.waiter-mobile .mobile-connect-primary, .waiter-mobile .mobile-connect-secondary {
+  width: 100%; min-height: 48px; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer;
+}
+.waiter-mobile .mobile-connect-primary { color: #fff; background: #2563eb; border: 0; }
+.waiter-mobile .mobile-connect-primary:disabled { opacity: .6; cursor: default; }
+.waiter-mobile .mobile-connect-secondary { color: #2563eb; background: transparent; border: 0; margin-top: 8px; }
+.waiter-mobile .mobile-content-shell { display: block; min-height: 100%; }
+.waiter-mobile .mobile-connection-blocked .mobile-content-shell,
+.waiter-mobile .mobile-connection-blocked .sidebar { opacity: .45; pointer-events: none; }
+.history-pagination-mobile { display: none; }
+@media (max-width: 768px) {
+  .waiter-mobile .main-content {
+    padding-bottom: 66px;
+    scroll-padding-bottom: 66px;
+  }
+  .waiter-mobile .history-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .waiter-mobile .history-stats .orders-stat {
+    min-width: 0;
+    padding: 10px;
+    gap: 9px;
+  }
+  .waiter-mobile .history-stats .orders-stat img {
+    width: 36px !important;
+    height: 36px !important;
+  }
+  .waiter-mobile .history-stats .orders-stat-label {
+    font-size: 11px;
+    line-height: 1.2;
+    white-space: normal;
+  }
+  .waiter-mobile .history-stats .orders-stat-value { font-size: 17px; }
+  .waiter-mobile .history-table-wrap { width: 100%; max-width: 100%; }
+  .waiter-mobile .history-pagination { min-width: 0; display: flex; flex-direction: row; align-items: center; gap: 8px; }
+  .waiter-mobile .history-pagination-btns { display: none; }
+  .waiter-mobile .history-pagination-mobile { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .waiter-mobile .history-pagination-mobile .page-btn { width: 36px; height: 36px; }
+  .waiter-mobile .sidebar-btn { flex: 1 1 0; min-width: 0; }
+  .waiter-mobile .sidebar-profile-btn { width: 52px; max-width: 52px; }
+  .waiter-mobile .sidebar-bottom { margin-left: 2px; padding-left: 2px; }
+  .waiter-mobile .pin-right { padding: 20px 12px; }
+}

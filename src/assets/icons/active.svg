@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t d">
+  <title id="t">Активные</title>
+  <desc id="d">Активный статус с отметкой</desc>
+  <defs>
+    <linearGradient id="g" x1="29" y1="28" x2="227" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#15803D"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#g)"/>
+  <circle cx="128" cy="128" r="70" fill="none" stroke="#fff" stroke-width="11"/>
+  <path d="m88 128 27 27 55-63" fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M58 128H43M213 128h-15M128 58V43M128 213v-15" stroke="#BBF7D0" stroke-width="9" stroke-linecap="round"/>
+</svg>

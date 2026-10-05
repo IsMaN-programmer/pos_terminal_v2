@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t d">
+  <title id="t">Отправлено</title>
+  <desc id="d">Отправленный заказ</desc>
+  <defs>
+    <linearGradient id="g" x1="29" y1="28" x2="227" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#06B6D4"/>
+      <stop offset="1" stop-color="#0284C7"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#g)"/>
+  <path d="M67 58h82l40 40v100H67V58Z" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M149 58v40h40M89 111h43M89 138h27M89 165h19" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m116 175 55-55M145 120h26v26" fill="none" stroke="#fff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

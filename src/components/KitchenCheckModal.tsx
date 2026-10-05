@@ -1,6 +1,18 @@
 import { useState } from 'react'
+import { dataStore } from '../services/dataStore'
 import type { OrderItem, KitchenItem } from '../data/types'
 import { useT, locale } from '../i18n'
+
+function getManualModifiers(mods: string[]): string[] {
+  try {
+    const raw = dataStore.getItem('pos_v2_modifier_groups')
+    const groups: { label: string; options: string[] }[] = raw ? JSON.parse(raw) : []
+    const addonNames = new Set(
+      groups.filter(g => g.label === 'Добавка').flatMap(g => g.options || [])
+    )
+    return mods.filter(m => !addonNames.has(m))
+  } catch { return mods }
+}
 
 type PaperSize = '58' | '80'
 
@@ -36,11 +48,11 @@ export default function KitchenCheckModal({
         </div>
 
         <div className={`kitchen-check-receipt paper-${paperSize}`}>
-          <div className="kc-header">{t('КУХНЯ', 'OSHXONA')}</div>
+          <div className="kc-header">{t('КУХНЯ', 'OSHXONA', 'KITCHEN')}</div>
 
           <div className="kc-meta">
             <span>{tableLabel}</span>
-            <span>{guestCount} {t('чел.', 'kishi')}</span>
+            <span>{guestCount} {t('чел.', 'kishi', 'persons')}</span>
             <span>{dateStr} {timeStr}</span>
           </div>
 
@@ -54,17 +66,17 @@ export default function KitchenCheckModal({
             </div>
           )}
 
-          {orderModifiers.length > 0 && (
-            <div className="kc-order-mods">{t('Модификаторы: ', 'Modifikatorlar: ')}{orderModifiers.join(', ')}</div>
+          {getManualModifiers(orderModifiers).length > 0 && (
+            <div className="kc-order-mods">{t('Модификаторы: ', 'Modifikatorlar: ', 'Modifiers: ')}{getManualModifiers(orderModifiers).join(', ')}</div>
           )}
 
           <div className="kc-items">
             {items.map(item => {
               const orderItem = orderItems.find(oi => oi.id === item.id)
               return (
-                <div key={item.id} className="kc-item">
+                <div key={item.id} className={`kc-item${item.sub ? ' kc-item-sub' : ''}`}>
                   <div className="kc-item-row">
-                    <span className="kc-item-name">{item.name}</span>
+                    <span className="kc-item-name">{item.sub ? '→ ' : ''}{item.name}</span>
                     <span className="kc-item-qty">× {item.quantity}</span>
                   </div>
                   {orderItem?.comment && <div className="kc-item-note">{orderItem.comment}</div>}
@@ -74,12 +86,12 @@ export default function KitchenCheckModal({
           </div>
 
           {items.length === 0 && (
-            <div className="kc-empty">{t('Нет блюд для отправки', "Yuborish uchun taomlar yo'q")}</div>
+            <div className="kc-empty">{t('Нет блюд для отправки', 'Yuborish uchun taomlar yo\'q', 'No dishes to send')}</div>
           )}
 
           <div className="kc-divider" />
 
-          <div className="kc-info">{t('Заказ отправляется на кухню', 'Buyurtma oshxonaga yuborilmoqda')}</div>
+          <div className="kc-info">{t('Заказ отправляется на кухню', 'Buyurtma oshxonaga yuborilmoqda', 'Order is being sent to kitchen')}</div>
         </div>
 
         <div className="kc-actions">
@@ -89,7 +101,7 @@ export default function KitchenCheckModal({
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            {t('Печатать', 'Chop etish')}
+            {t('Печатать', 'Chop etish', 'Print')}
           </button>
           <button className="kc-back-btn" onClick={onBack}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -1,21 +1,22 @@
+﻿import { dataStore } from '../services/dataStore'
 export const RECEIPT_LOGO_KEY = 'pos_v2_receipt_logo'
 export const DEFAULT_RECEIPT_LOGO = '/unnamed.png'
 export const RECEIPT_LOGO_SIZE = 512
 
 export function getReceiptLogo(): string {
   try {
-    return localStorage.getItem(RECEIPT_LOGO_KEY) || DEFAULT_RECEIPT_LOGO
+    return dataStore.getItem(RECEIPT_LOGO_KEY) || DEFAULT_RECEIPT_LOGO
   } catch {
     return DEFAULT_RECEIPT_LOGO
   }
 }
 
 export function setReceiptLogo(dataUrl: string) {
-  localStorage.setItem(RECEIPT_LOGO_KEY, dataUrl)
+  dataStore.setItem(RECEIPT_LOGO_KEY, dataUrl)
 }
 
 export function resetReceiptLogo() {
-  localStorage.removeItem(RECEIPT_LOGO_KEY)
+  dataStore.removeItem(RECEIPT_LOGO_KEY)
 }
 
 export function resizeReceiptLogo(file: File): Promise<string> {
@@ -33,7 +34,7 @@ export function resizeReceiptLogo(file: File): Promise<string> {
       const ctx = canvas.getContext('2d')
       if (!ctx) {
         URL.revokeObjectURL(url)
-        reject(new Error('Не удалось обработать изображение'))
+        reject(new Error('РќРµ СѓРґР°Р»РѕСЃСЊ РѕР±СЂР°Р±РѕС‚Р°С‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ'))
         return
       }
       ctx.drawImage(img, 0, 0, w, h)
@@ -42,7 +43,7 @@ export function resizeReceiptLogo(file: File): Promise<string> {
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('Не удалось загрузить изображение'))
+      reject(new Error('РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёРµ'))
     }
     img.src = url
   })

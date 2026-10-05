@@ -10,6 +10,11 @@ declare global {
       quitAndInstall: () => Promise<boolean>
       onUpdateStatus: (cb: (s: UpdateState) => void) => () => void
       generatePdf: (html: string) => Promise<string>
+      getNetworkConfig: () => Promise<{ role: string; masterIp: string; terminalName: string }>
+      setSlaveMode: (masterIp: string) => Promise<{ ok: boolean; error?: string }>
+      resetNetworkMode: () => Promise<{ ok: boolean }>
+      restartApp: () => Promise<boolean>
+      exitFullscreen: () => Promise<boolean>
     }
   }
 

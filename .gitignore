@@ -11,3 +11,11 @@ release/
 dist-installer/
 *.tsbuildinfo
 *.exe
+output/
+tmp/
+*.apk
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/capacitor-cordova-android-plugins/build/

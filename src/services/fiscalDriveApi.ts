@@ -3,9 +3,12 @@
  * Covers all 22 endpoints from FiscalDriveService Swagger (http://127.0.0.1:3449/swagger/index.html)
  */
 
+import { isNativeMobile } from './capacitor'
+
 const BASE_PROXY = '/api/fiscal-drive-proxy';
 
 async function postForm<T = any>(endpoint: string, params: Record<string, any> = {}, extraHeaders: Record<string, string> = {}): Promise<T> {
+  if (isNativeMobile()) throw new Error('Фискальные операции выполняются только на главной кассе')
   const body = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v !== undefined && v !== null) {
@@ -37,6 +40,10 @@ async function postForm<T = any>(endpoint: string, params: Record<string, any> =
 }
 
 async function postJson<T = any>(endpoint: string, payload: any = {}, extraHeaders: Record<string, string> = {}): Promise<T> {
+  if (isNativeMobile()) {
+    if (endpoint === 'FiscalDrive/List') return [] as T
+    throw new Error('Фискальные операции выполняются только на главной кассе')
+  }
   const res = await fetch(`${BASE_PROXY}/${endpoint}`, {
     method: 'POST',
     headers: {
@@ -141,7 +148,10 @@ export const fiscalDriveApi = {
 
   // 12. FiscalDrive/Receipt/GetTXID/{FactoryID}
   getReceiptTXID: (factoryId: string, receiptData: any) =>
-    postJson<any>(`FiscalDrive/Receipt/GetTXID/${encodeURIComponent(factoryId)}`, receiptData),
+    postJson<any>(`FiscalDrive/Receipt/GetTXID/${encodeURIComponent(factoryId)}`, {
+      ...receiptData,
+      PaymentType: receiptData.PaymentType || (Number(receiptData.ReceivedCash) > 0 && Number(receiptData.ReceivedCard) > 0 ? 4 : Number(receiptData.ReceivedCash) > 0 ? 1 : 2),
+    }),
 
   // 13. FiscalDrive/Receipt/Info/{FactoryID}
   getReceiptInfo: (factoryId: string, index: number = 0, tags?: string[]) =>
@@ -188,6 +198,9 @@ export const fiscalDriveApi = {
  * Execute full batch OFD sync pipeline
  */
 export async function runFullOfdSync(factoryId: string) {
+  if (isNativeMobile()) {
+    throw new Error('Отправка в ОФД выполняется только на главной кассе')
+  }
   const results: Record<string, any> = {};
   if (!factoryId) return { success: false, error: 'FactoryID missing' };
 

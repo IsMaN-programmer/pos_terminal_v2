@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { dataStore } from '../services/dataStore'
 import type { OrderItem } from '../data/types'
 import { fiscalDriveApi } from '../services/fiscalDriveApi'
 import { getCompanyTin, getCompanyName, getCompanyAddress, getCompanyPhone, fetchAndStoreCompanyData } from '../utils/companyInfo'
@@ -29,8 +30,8 @@ export default function AvansCheckModal({
   shiftNumber = '001', onPrint, onBack,
 }: AvansCheckModalProps) {
   const t = useT()
-  const ROLE_LABELS: Record<string, string> = { waiter: t('Официант', 'Ofitsiant'), cashier: t('Кассир', 'Kassir'), admin: t('Администратор', 'Administrator') }
-  const [paperSize, setPaperSize] = useState<PaperSize>((localStorage.getItem(PAPER_KEY) as PaperSize) || '58')
+  const ROLE_LABELS: Record<string, string> = { waiter: t('Официант', 'Ofitsiant', 'Waiter'), cashier: t('Кассир', 'Kassir', 'Cashier'), admin: t('Администратор', 'Administrator', 'Administrator') }
+  const [paperSize, setPaperSize] = useState<PaperSize>((dataStore.getItem(PAPER_KEY) as PaperSize) || '58')
   const [fmTerminalId, setFmTerminalId] = useState('')
   const [orgStir, setOrgStir] = useState(getCompanyTin)
   const [orgName, setOrgName] = useState(getCompanyName)
@@ -97,13 +98,13 @@ export default function AvansCheckModal({
 
           <div className="ac-meta">
             <div className="ac-meta-row"><span className="ac-label">STIR</span><span className="ac-value">{orgStir || '—'}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">{t('Дата', 'Sana')}</span><span className="ac-value">{dateStr}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">{t('Время', 'Vaqt')}</span><span className="ac-value">{timeStr}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">{t('Заказ', 'Buyurtma')}</span><span className="ac-value">#{orderNum}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">{t('Стол', 'Stol')}</span><span className="ac-value">{tableLabel}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">{t('Гости', 'Mehmonlar')}</span><span className="ac-value">{guestCount}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Дата', 'Sana', 'Date')}</span><span className="ac-value">{dateStr}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Время', 'Vaqt', 'Time')}</span><span className="ac-value">{timeStr}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Заказ', 'Buyurtma', 'Order')}</span><span className="ac-value">#{orderNum}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Стол', 'Stol', 'Table')}</span><span className="ac-value">{tableLabel}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Гости', 'Mehmonlar', 'Guests')}</span><span className="ac-value">{guestCount}</span></div>
             <div className="ac-meta-row"><span className="ac-label">{ROLE_LABELS[userRole] || userRole}</span><span className="ac-value">{staffName}</span></div>
-            <div className="ac-meta-row"><span className="ac-label">{t('Смена', 'Smena')}</span><span className="ac-value">{shiftNumber}</span></div>
+            <div className="ac-meta-row"><span className="ac-label">{t('Смена', 'Smena', 'Shift')}</span><span className="ac-value">{shiftNumber}</span></div>
           </div>
 
           <div className="ac-divider solid" />
@@ -113,7 +114,7 @@ export default function AvansCheckModal({
               <div key={item.id} className="ac-item">
                 <div className="ac-item-line">
                   <span className="ac-item-name">{item.menuItem.name}</span>
-                  <span className="ac-item-right">{item.quantity} x {item.unitPrice.toLocaleString()} {t('сум', "so'm")}</span>
+                  <span className="ac-item-right">{item.quantity} x {item.unitPrice.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span>
                 </div>
                 <div className="ac-item-tax">{TAX_TYPE}: {Math.round(item.total * 12 / 100).toLocaleString()}</div>
                 <div className="ac-item-mxik">MXIK: {item.menuItem.mxik || '09901001001000000'}</div>
@@ -124,29 +125,29 @@ export default function AvansCheckModal({
           <div className="ac-divider solid" />
 
           <div className="ac-total">
-            <span>{t('ИТОГО:', 'JAMI:')}</span>
-            <span className="ac-total-value">{total.toLocaleString()} {t('сум', "so'm")}</span>
+            <span>{t('ИТОГО:', 'JAMI:', 'TOTAL:')}</span>
+            <span className="ac-total-value">{total.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span>
           </div>
           <div className="ac-vat">{TAX_TYPE}: {vat.toLocaleString()}</div>
 
           <div className="ac-divider dashed" />
 
           <div className="ac-fiscal">
-            <div className="ac-fiscal-row"><span>{t('Терминал ID:', 'Terminal ID:')}</span><span>{fmTerminalId || 'TERM-001'}</span></div>
+            <div className="ac-fiscal-row"><span>{t('Терминал ID:', 'Terminal ID:', 'Terminal ID:')}</span><span>{fmTerminalId || 'TERM-001'}</span></div>
           </div>
 
-          <div className="ac-footer">{t('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.')}</div>
+          <div className="ac-footer">{t('Спасибо! Ждём вас снова.', 'Rahmat! Yana kutib qolamiz.', 'Thank you! We look forward to seeing you again.')}</div>
         </div>
 
         <div className="ac-actions">
           <button className="ac-print-btn" disabled={printing} onClick={async () => {
-            const printer = localStorage.getItem(PRINTERS_KEY)
+            const printer = dataStore.getItem('pos_v2_waiter_printer_name') || dataStore.getItem(PRINTERS_KEY)
             let printed = false
             if (printer) {
               setPrinting(true)
               try {
-                if (!receiptRef.current) throw new Error(tr('Чек не готов к печати', 'Chek chop etishga tayyor emas'))
-                await printReceiptNode(printer, receiptRef.current, paperSize)
+                if (!receiptRef.current) throw new Error(tr('Чек не готов к печати', 'Chek chop etishga tayyor emas', 'Receipt not ready for printing'))
+                await printReceiptNode(printer, receiptRef.current, paperSize, 'waiter')
                 printed = true
               } catch (e) {
                 // Fall back to the old plain-text print so a printer that
@@ -167,7 +168,7 @@ export default function AvansCheckModal({
                     })),
                     total, vat, fmTerminalId, shiftNumber,
                   }, paperSize)
-                  await printText(printer, text)
+                  await printText(printer, text, 'waiter')
                   printed = true
                 } catch (e2) {
                   alert(tr('Ошибка печати: ' + (e2 instanceof Error ? e2.message : 'неизвестная ошибка'), "Chop etish xatosi: " + (e2 instanceof Error ? e2.message : "noma'lum xato")))
@@ -183,7 +184,7 @@ export default function AvansCheckModal({
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            {printing ? t('Печать…', 'Chop etilmoqda…') : t('Печатать', 'Chop etish')}
+            {printing ? t('Печать…', 'Chop etilmoqda…', 'Printing...') : t('Печатать', 'Chop etish', 'Print')}
           </button>
           <button className="ac-back-btn" onClick={onBack}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

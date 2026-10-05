@@ -1,7 +1,7 @@
 {
   "name": "pos-terminal-v2",
   "private": true,
-  "version": "2.0.1",
+  "version": "2.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -11,16 +11,30 @@
     "electron:dev": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win",
-    "publish": "npm run build && electron-builder --win --publish always"
+    "publish": "npm run build && electron-builder --win --publish always",
+    "mobile:sync": "npm run build && npx cap sync android",
+    "mobile:android:add": "npx cap add android",
+    "mobile:open": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor-mlkit/barcode-scanning": "^7.5.0",
+    "@capacitor/android": "^7.6.9",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/cli": "^7.6.9",
+    "@capacitor/core": "^7.6.9",
+    "@capacitor/filesystem": "^7.1.9",
+    "@e-is/capacitor-bluetooth-serial": "^6.0.3",
+    "cordova-plugin-file-opener2": "^4.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "electron-updater": "^6.8.9",
     "express": "^4.21.2",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "sql.js": "^1.11.0"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
@@ -69,6 +83,7 @@
   },
   "allowScripts": {
     "esbuild@0.25.12": true,
-    "electron-winstaller@5.4.0": true
+    "electron-winstaller@5.4.0": true,
+    "sharp@0.32.6": true
   }
 }

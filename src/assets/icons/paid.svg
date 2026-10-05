@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t d">
+  <title id="t">Оплачено</title>
+  <desc id="d">Оплата подтверждена</desc>
+  <defs>
+    <linearGradient id="g" x1="29" y1="28" x2="227" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#15803D"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#g)"/>
+  <circle cx="128" cy="128" r="69" fill="none" stroke="#fff" stroke-width="11"/>
+  <path d="M128 83v90M152 99c-7-7-15-10-25-10-14 0-25 8-25 20 0 31 54 13 54 43 0 12-11 20-28 20-11 0-21-4-29-12" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+</svg>

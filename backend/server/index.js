@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import http from "node:http";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "url";
@@ -10,6 +11,8 @@ import { execSync } from "node:child_process";
 import pool, { initDb } from "./db.js";
 import { decodePng } from "./png.js";
 import { buildReceiptEscposJob, buildTextEscposJob, dotsWidthForPaper } from "./escpos.js";
+import { getConfig, setConfig, getTerminalName, getMainLanIp } from "./config.js";
+import { initNetwork, setMasterMode, listTerminals, kickTerminal, broadcastTerminals, broadcastToTerminals, getTerminalIp, requestPrinterLists } from "./network.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
@@ -23,6 +26,156 @@ app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 const distPath = path.resolve(__dirname, "..", "..", "dist");
 app.use(express.static(distPath));
+
+// ---------- Network (master / slave) ----------
+
+let cachedPrinters = [];
+let cachedPrintersAt = 0;
+
+function availablePrinters() {
+  if (Date.now() - cachedPrintersAt < 10000 && cachedPrinters.length > 0) return cachedPrinters;
+  try {
+    const output = execSync('powershell -NoProfile -Command "Get-Printer | Select-Object -ExpandProperty Name"', {
+      encoding: "utf8", timeout: 5000,
+    });
+    cachedPrinters = output.trim().split("\n").map(p => p.trim()).filter(Boolean);
+  } catch {
+    cachedPrinters = [];
+  }
+  cachedPrintersAt = Date.now();
+  return cachedPrinters;
+}
+
+app.get("/api/network/status", (_req, res) => {
+  const cfg = getConfig();
+  res.json({
+    ok: true,
+    role: cfg.role,
+    masterIp: cfg.masterIp,
+    ip: getMainLanIp(),
+    port: PORT,
+    hostname: getTerminalName(),
+    printers: cfg.printers,
+    terminals: listTerminals(),
+  });
+});
+
+app.post("/api/network/role", (req, res) => {
+  const { role, masterIp } = req.body || {};
+  if (role !== 'master' && role !== 'slave' && role !== 'neutral') {
+    return res.status(400).json({ ok: false, error: "Invalid role" });
+  }
+  if (role === 'slave') {
+    const ip = String(masterIp || '').trim();
+    if (!/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
+      return res.status(400).json({ ok: false, error: "Invalid IP address" });
+    }
+    setConfig({ role: 'slave', masterIp: ip });
+    setMasterMode(false);
+    return res.json({ ok: true, role: 'slave' });
+  }
+  setConfig({ role });
+  setMasterMode(role === 'master');
+  broadcastTerminals();
+  res.json({ ok: true, role });
+});
+
+app.get("/api/network/terminals", (_req, res) => {
+  res.json({ ok: true, terminals: listTerminals() });
+});
+
+app.post("/api/network/kick/:id", (req, res) => {
+  const kicked = kickTerminal(String(req.params.id));
+  res.json({ ok: kicked });
+});
+
+const normPrinterTarget = (v) =>
+  typeof v === 'string'
+    ? { terminal: '', printer: v }
+    : { terminal: String(v?.terminal || ''), printer: String(v?.printer || '') };
+
+app.post("/api/network/printers", (req, res) => {
+  const { receipt, kitchen, waiter } = req.body || {};
+  const cfg = setConfig({
+    printers: {
+      receipt: normPrinterTarget(receipt),
+      kitchen: normPrinterTarget(kitchen),
+      waiter: normPrinterTarget(waiter),
+    },
+  });
+  res.json({ ok: true, printers: cfg.printers });
+});
+
+app.post("/api/network/printers/refresh", (_req, res) => {
+  requestPrinterLists();
+  res.json({ ok: true });
+});
+
+// ---------- Shared data store (all terminals read/write the same data) ----------
+
+const DATA_KEY_RE = /^pos_v2_[a-zA-Z0-9_]+$/;
+
+app.get("/api/data", (_req, res) => {
+  try {
+    const result = pool.query("SELECT key, value FROM data_store");
+    const data = {};
+    for (const row of result.rows) data[row.key] = row.value;
+    res.json({ ok: true, data });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.get("/api/data/:key", (req, res) => {
+  const key = String(req.params.key || "");
+  if (!DATA_KEY_RE.test(key)) return res.status(400).json({ ok: false, error: "Invalid key" });
+  try {
+    const result = pool.query("SELECT value FROM data_store WHERE key = $1", [key]);
+    res.json({ ok: true, value: result.rows.length > 0 ? result.rows[0].value : null });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.put("/api/data/:key", (req, res) => {
+  const key = String(req.params.key || "");
+  if (!DATA_KEY_RE.test(key)) return res.status(400).json({ ok: false, error: "Invalid key" });
+  const value = req.body?.value;
+  if (value === undefined || value === null) return res.status(400).json({ ok: false, error: "value required" });
+  try {
+    pool.query(
+      `INSERT INTO data_store (key, value, updated_at) VALUES ($1, $2, datetime('now'))
+       ON CONFLICT(key) DO UPDATE SET value = EXCLUDED.value, updated_at = datetime('now')`,
+      [key, String(value)]
+    );
+    broadcastToTerminals("data:update", { key, value: String(value) });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete("/api/data/:key", (req, res) => {
+  const key = String(req.params.key || "");
+  if (!DATA_KEY_RE.test(key)) return res.status(400).json({ ok: false, error: "Invalid key" });
+  try {
+    pool.query("DELETE FROM data_store WHERE key = $1", [key]);
+    broadcastToTerminals("data:update", { key, value: null });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete("/api/data", (_req, res) => {
+  try {
+    pool.query("DELETE FROM data_store");
+    broadcastToTerminals("data:cleared", {});
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 
 app.all("/api/fiscal-drive-proxy/*", async (req, res) => {
   const proxyPath = req.url.replace("/api/fiscal-drive-proxy/", "").split("?")[0];
@@ -97,7 +250,7 @@ app.all("/api/cabinet-proxy/*", async (req, res) => {
   try {
     const cabinetBase = "https://cabinet.posvk.uz/api/cabinet-api";
     const auth = req.headers.authorization || "";
-    const headers = { "Content-Type": "application/json" };
+    const headers = { "Content-Type": "application/json", "Accept": "application/json" };
     if (auth) headers["Authorization"] = auth;
     const fdRes = await fetch(`${cabinetBase}/${proxyPath}`, {
       method: req.method,
@@ -143,6 +296,9 @@ app.post("/api/fiscal-register-receipt/:factoryId", async (req, res) => {
     const fdReceipt = { ...receipt };
     for (const key of Object.keys(fdReceipt)) {
       if (key.startsWith('_')) delete fdReceipt[key];
+    }
+    if (!fdReceipt.PaymentType) {
+      fdReceipt.PaymentType = Number(fdReceipt.ReceivedCash) > 0 && Number(fdReceipt.ReceivedCard) > 0 ? 4 : Number(fdReceipt.ReceivedCash) > 0 ? 1 : 2;
     }
     // Helper to format a Date as "YYYY-MM-DD HH:mm:ss"
     const fmtDt = (d) => {
@@ -259,65 +415,6 @@ app.post("/api/fiscal-register-receipt/:factoryId", async (req, res) => {
     const receiptId = receipt._receiptId || `FM-${seq}-${Date.now()}`;
     const locId = crypto.randomUUID();
 
-    // Push receipt data to Cabinet API (non-blocking)
-    try {
-      const auth = req.headers.authorization || "";
-      if (auth) {
-        const cabinetBase = "https://cabinet.posvk.uz/api/cabinet-api";
-        const nowISO = new Date().toISOString();
-        const cabinetPayload = {
-          id: receiptId,
-          locId,
-          terminalId: tid,
-          receiptSec: seq,
-          fiscalSign: sign,
-          qrcodeUrl: qrCodeUrl,
-          dateTime: dt || nowISO,
-          createdDate: nowISO,
-          totalSum: cashSum,
-          totalPay: cashSum,
-          totalVat: Math.round((receipt.Items || []).reduce((s, it) => s + (it.VAT || 0), 0) * 100) / 100,
-          cashSum: receipt.ReceivedCash || 0,
-          cashId: receipt._cashId || null,
-          cashName: receipt._cashName || "",
-          companyId: receipt._companyId || null,
-          license: receipt._license || factoryId,
-          saleDayId: receipt._saleDayId || "",
-          sendOfdStatus: 1,
-          status: 0,
-          type: receipt.Type || 0,
-          userId: receipt._userId || null,
-          userName: receipt._userName || receipt._cashier || "",
-          cardNumber: receipt._cardNumber || "",
-          rrn: receipt._rrn || "",
-          cashBack: 0,
-          certificateSum: 0,
-          commentary: "",
-          enabled: 1,
-          extraInfo: receipt.ExtraInfo || {},
-          latitude: receipt.ExtraInfo?.latitude || null,
-          longitude: receipt.ExtraInfo?.longitude || null,
-          txId: txIdVal,
-          cashier: receipt._cashier || "",
-          items: (receipt.Items || []).map(it => ({
-            name: it.Name || "",
-            amount: it.Amount || 1,
-            price: it.Price || 0,
-            vatPercent: it.VATPercent || 12,
-            vat: it.VAT || 0,
-            discount: it.Discount || 0,
-            spic: it.SPIC || "",
-            barcode: it.Barcode || ""
-          }))
-        };
-        fetch(`${cabinetBase}/desktop/receipt/sync`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": auth },
-          body: JSON.stringify(cabinetPayload)
-        }).catch(e => console.error("Cabinet sync error:", e.message));
-      }
-    } catch (e) { console.error("Cabinet sync exception:", e.message); }
-
     // Sync receipts and full files to OFD
     (async () => {
       try {
@@ -342,6 +439,7 @@ app.post("/api/fiscal-register-receipt/:factoryId", async (req, res) => {
       receiptSeq: seq,
       receiptId,
       locId,
+      txId: txIdVal,
       terminalId: tid,
       dateTime: dt,
     });
@@ -355,12 +453,12 @@ app.get("/api/fiscal-receipt-history", async (req, res) => {
   const auth = req.headers.authorization || "";
   try {
     const cabinetBase = "https://cabinet.posvk.uz/api/cabinet-api";
-    const fdRes = await fetch(`${cabinetBase}/receipt/history?${new URLSearchParams(req.query)}`, {
+    const fdRes = await fetch(`${cabinetBase}/api/invoices-data-list?${new URLSearchParams(req.query)}`, {
       headers: { "Content-Type": "application/json", ...(auth ? { "Authorization": auth } : {}) }
     });
     const text = await fdRes.text();
-    try { res.json(JSON.parse(text)); }
-    catch { res.send(text); }
+    try { res.status(fdRes.status).json(JSON.parse(text)); }
+    catch { res.status(fdRes.status).send(text); }
   } catch (e) {
     res.status(502).json({ error: "Cabinet API unavailable", message: e.message });
   }
@@ -455,17 +553,75 @@ app.get("/api/tables", async (req, res) => {
   }
 });
 
-app.get("/api/printers", async (_req, res) => {
-  try {
-    const output = execSync('powershell -NoProfile -Command "Get-Printer | Select-Object -ExpandProperty Name"', {
-      encoding: "utf8", timeout: 5000,
-    })
-    const printers = output.trim().split("\n").map(p => p.trim()).filter(p => p)
-    res.json({ printers })
-  } catch {
-    res.json({ printers: [] })
-  }
+app.get("/api/printers", (_req, res) => {
+  res.json({ printers: availablePrinters() });
 })
+
+// Resolves which printer to use on which machine. The centrally configured
+// logical printer (receipt/kitchen/waiter) may point at a printer installed
+// on a slave terminal - in that case the job is proxied to the slave's own
+// backend (see dispatchPrint). If no terminal is configured the requested
+// printer (or the configured one) is used on this machine.
+function resolvePrinterConfig(body) {
+  const cfg = getConfig();
+  const installed = availablePrinters();
+  const requested = String(body?.printerName || '').trim();
+  const logical = body?.logical === 'kitchen' ? cfg.printers.kitchen : body?.logical === 'waiter' ? cfg.printers.waiter : cfg.printers.receipt;
+  if (logical && logical.printer) {
+    const onRemote = Boolean(logical.terminal);
+    const usableLocally = !installed.length || installed.includes(logical.printer);
+    if (onRemote || usableLocally) {
+      return { terminal: String(logical.terminal || ''), printer: String(logical.printer) };
+    }
+  }
+  return { terminal: '', printer: requested };
+}
+
+// Routes a print job to the machine that physically owns the printer. When
+// the owner is another terminal the job is forwarded over HTTP to that
+// terminal's own backend (http://<ip>:PORT/api/print*), which runs the exact
+// same printing code.
+async function dispatchPrint(req, res, path) {
+  const target = resolvePrinterConfig(req.body);
+  if (!target.printer) return res.status(400).json({ error: 'printer not configured' });
+  const isLocal = !target.terminal || target.terminal === getTerminalName() || getConfig().role !== 'master';
+  let ip = '';
+  if (!isLocal) {
+    ip = getTerminalIp(target.terminal);
+    if (!ip) {
+      // Terminal is unknown or offline (e.g. stale config referencing a
+      // machine by an old name): fall back to printing on this machine.
+      target.terminal = '';
+    }
+  }
+  if (!target.terminal) {
+    try {
+      if (path === '/api/print') {
+        sendRawBytesToPrinter(target.printer, buildTextEscposJob(req.body.content));
+      } else {
+        const base64 = String(req.body.image).replace(/^data:image\/png;base64,/, '');
+        const { width, height, rgba } = decodePng(Buffer.from(base64, 'base64'));
+        const dotsWidth = dotsWidthForPaper(req.body.paperWidthMm);
+        sendRawBytesToPrinter(target.printer, buildReceiptEscposJob({ rgba, width, height, dotsWidth }));
+      }
+      return res.json({ ok: true });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+  try {
+    const upstream = await fetch(`http://${ip}:${PORT}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...req.body, printerName: target.printer }),
+      signal: AbortSignal.timeout(30000),
+    });
+    const data = await upstream.json().catch(() => ({}));
+    res.status(upstream.status).json(data);
+  } catch (e) {
+    res.status(502).json({ error: `Не удалось передать задание на терминал "${target.terminal}": ${e.message}` });
+  }
+}
 
 // Sends a raw byte buffer straight to a Windows printer's spooler (RAW
 // datatype), bypassing System.Drawing / the printer driver entirely. This is
@@ -564,40 +720,28 @@ if (-not $ok) { Write-Error "WritePrinter failed"; exit 1 }
 }
 
 app.post("/api/print", async (req, res) => {
-  const { printerName, content } = req.body
-  if (!printerName || !content) {
-    return res.status(400).json({ error: "printerName and content required" })
-  }
-  try {
-    sendRawBytesToPrinter(printerName, buildTextEscposJob(content))
-    res.json({ ok: true })
-  } catch (e) {
-    res.status(500).json({ error: e.message })
-  }
-})
+  const { content } = req.body;
+  if (!content) return res.status(400).json({ error: "content required" });
+  await dispatchPrint(req, res, "/api/print");
+});
 
 app.post("/api/print-image", async (req, res) => {
-  const { printerName, image, paperWidthMm } = req.body
-  if (!printerName || !image) {
-    return res.status(400).json({ error: "printerName and image required" })
-  }
-  try {
-    const base64 = String(image).replace(/^data:image\/png;base64,/, "")
-    const { width, height, rgba } = decodePng(Buffer.from(base64, "base64"))
-    const dotsWidth = dotsWidthForPaper(paperWidthMm)
-    const job = buildReceiptEscposJob({ rgba, width, height, dotsWidth })
-    sendRawBytesToPrinter(printerName, job)
-    res.json({ ok: true })
-  } catch (e) {
-    res.status(500).json({ error: e.message })
-  }
-})
+  const { image } = req.body;
+  if (!image) return res.status(400).json({ error: "image required" });
+  await dispatchPrint(req, res, "/api/print-image");
+});
 
 async function startServer() {
   await initDb();
-  app.listen(PORT, () => {
+  const server = http.createServer(app);
+  initNetwork(server);
+  const cfg = getConfig();
+  setMasterMode(cfg.role === 'master');
+  server.listen(PORT, () => {
     console.log(`===== POS Terminal v2 =====`);
     console.log(`API:   http://localhost:${PORT}`);
+    console.log(`Role:  ${cfg.role}`);
+    console.log(`IP:    ${getMainLanIp()}`);
     console.log(`Press Ctrl+C to stop`);
   });
 }

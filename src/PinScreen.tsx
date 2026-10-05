@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { dataStore } from './services/dataStore'
 import { useT } from './i18n'
 
 interface Staff {
@@ -6,6 +7,7 @@ interface Staff {
   name: string
   pin: string
   role: string
+  phone?: string
 }
 
 interface PinScreenProps {
@@ -16,15 +18,16 @@ const STORAGE_KEY = 'pos_v2_staff'
 
 function loadStaff(): Staff[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
+    const raw = dataStore.getItem(STORAGE_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    return Array.isArray(list) ? list : []
   } catch {
     return []
   }
 }
 
 function saveStaff(staff: Staff[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(staff))
+  dataStore.setItem(STORAGE_KEY, JSON.stringify(staff))
 }
 
 export default function PinScreen({ onComplete }: PinScreenProps) {
@@ -39,6 +42,10 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
     if (staff.length === 0) setStep('setup')
     else setStep('login')
   }, [])
+  useEffect(() => dataStore.subscribe(STORAGE_KEY, () => setStaff(loadStaff())), [])
+  useEffect(() => {
+    if (staff.length && step === 'setup') setStep('login')
+  }, [staff, step])
 
   function handleNumpad(val: string) {
     setError('')
@@ -52,10 +59,8 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
     if (next.length === 4) {
       if (step === 'setup') {
         const nextId = Math.max(...staff.map(s => s.id), 0) + 1
-        const admin: Staff = { id: nextId, name: t('Администратор', 'Administrator'), pin: next, role: 'admin' }
-        const cashier: Staff = { id: nextId + 1, name: t('Кассир', 'Kassir'), pin: '0000', role: 'cashier' }
-        const waiter: Staff = { id: nextId + 2, name: t('Официант', 'Ofitsiant'), pin: '1111', role: 'waiter' }
-        const updated = [...staff, admin, cashier, waiter]
+        const account: Staff = { id: nextId, name: t('Администратор', 'Administrator', 'Administrator'), pin: next, role: 'admin' }
+        const updated = [...staff, account]
         saveStaff(updated)
         setStaff(updated)
         setStep('login')
@@ -66,7 +71,7 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
         if (found) {
           onComplete(found)
         } else {
-          setError(t('Неверный PIN-код', 'PIN-kod noto\'g\'ri'))
+          setError(t('Неверный PIN-код', 'PIN-kod noto\'g\'ri', 'Invalid PIN'))
           setTimeout(() => { pinRef.current = ''; setPin('') }, 600)
         }
       }
@@ -102,20 +107,20 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
             <div className="pin-left-subtitle">Virtual kassa v2</div>
             <div className="pin-left-desc">
               {step === 'setup'
-                ? t('Создайте PIN-код для администратора', 'Administrator uchun PIN-kod yarating')
-                : t('Войдите в систему, используя PIN-код', 'PIN-kod yordamida tizimga kiring')}
+                ? t('Создайте PIN-код для администратора', 'Administrator uchun PIN-kod yarating', 'Create PIN for administrator')
+                : t('Войдите в систему, используя PIN-код', 'PIN-kod yordamida tizimga kiring', 'Log in using PIN')}
             </div>
           </div>
         </div>
         <div className="pin-right">
           <div className="pin-card">
             <div className="pin-card-title">
-              {step === 'setup' ? t('Создание PIN-кода', 'PIN-kod yaratish') : t('Вход по PIN-коду', 'PIN-kod orqali kirish')}
+              {step === 'setup' ? t('Создание PIN-кода', 'PIN-kod yaratish', 'Create PIN') : t('Вход по PIN-коду', 'PIN-kod orqali kirish', 'PIN login')}
             </div>
             <div className="pin-card-subtitle">
               {step === 'setup'
-                ? t('Придумайте 4-значный PIN-код', '4 xonali PIN-kod o\'ylab toping')
-                : t('Введите ваш PIN-код', 'PIN-kodingizni kiriting')}
+                ? t('Придумайте 4-значный PIN-код', '4 xonali PIN-kod o\'ylab toping', 'Create a 4-digit PIN')
+                : t('Введите ваш PIN-код', 'PIN-kodingizni kiriting', 'Enter your PIN')}
             </div>
 
             {error && <div className="pin-error">{error}</div>}

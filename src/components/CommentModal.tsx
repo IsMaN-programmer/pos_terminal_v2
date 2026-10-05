@@ -13,14 +13,14 @@ interface CommentModalProps {
 export default function CommentModal({ initialComment, initialTags, onSave, onCancel }: CommentModalProps) {
   const t = useT()
   const TAG_LABELS: Record<string, string> = {
-    'Без соли': t('Без соли', 'Tuzsiz'),
-    'Без сахара': t('Без сахара', 'Shakarsiz'),
-    'Без арахиса': t('Без арахиса', 'Yeryong\'oqsiz'),
-    'Без глютена': t('Без глютена', 'Glyutensiz'),
-    'Без лука': t('Без лука', 'Piyozsiz'),
-    'Поострее': t('Поострее', 'Achchiqroq'),
-    'Веган': t('Веган', 'Vegan'),
-    'Без лактозы': t('Без лактозы', 'Laktozasiz'),
+    'Без соли': t('Без соли', 'Tuzsiz', 'No salt'),
+    'Без сахара': t('Без сахара', 'Shakarsiz', 'No sugar'),
+    'Без арахиса': t('Без арахиса', 'Yeryong\'oqsiz', 'No peanuts'),
+    'Без глютена': t('Без глютена', 'Glyutensiz', 'Gluten-free'),
+    'Без лука': t('Без лука', 'Piyozsiz', 'No onion'),
+    'Поострее': t('Поострее', 'Achchiqroq', 'Extra spicy'),
+    'Веган': t('Веган', 'Vegan', 'Vegan'),
+    'Без лактозы': t('Без лактозы', 'Laktozasiz', 'Lactose-free'),
   }
   const [comment, setComment] = useState(initialComment)
   const [tags, setTags] = useState<string[]>(initialTags)
@@ -32,7 +32,7 @@ export default function CommentModal({ initialComment, initialTags, onSave, onCa
   return (
     <div className="modal-overlay" onClick={onCancel}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <h3 className="modal-title">{t('Комментарий к заказу', 'Buyurtmaga izoh')}</h3>
+        <h3 className="modal-title">{t('Комментарий к заказу', 'Buyurtmaga izoh', 'Order comment')}</h3>
 
         <div className="modal-tags">
           {PRESET_TAGS.map(tag => (
@@ -48,7 +48,7 @@ export default function CommentModal({ initialComment, initialTags, onSave, onCa
 
         <textarea
           className="modal-textarea"
-          placeholder={t('Ваш комментарий...', 'Izohingiz...')}
+          placeholder={t('Ваш комментарий...', 'Izohingiz...', 'Your comment...')}
           maxLength={120}
           value={comment}
           onChange={e => setComment(e.target.value)}
@@ -56,8 +56,8 @@ export default function CommentModal({ initialComment, initialTags, onSave, onCa
         <span className="modal-chars">{comment.length}/120</span>
 
         <div className="modal-actions">
-          <button className="modal-btn cancel" onClick={onCancel}>{t('Отменить', 'Bekor qilish')}</button>
-          <button className="modal-btn save" onClick={() => onSave(comment, tags)}>{t('Сохранить', 'Saqlash')}</button>
+          <button className="modal-btn cancel" onClick={onCancel}>{t('Отменить', 'Bekor qilish', 'Cancel')}</button>
+          <button className="modal-btn save" onClick={() => onSave(comment, tags)}>{t('Сохранить', 'Saqlash', 'Save')}</button>
         </div>
       </div>
     </div>

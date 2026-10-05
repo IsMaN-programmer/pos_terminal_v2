@@ -24,6 +24,14 @@ export interface MenuItem {
   mxikName?: string
   mxikMarking?: boolean
   goodsId?: number
+  draft?: boolean
+  draftLiters?: number
+}
+
+export interface DishBinding {
+  id: number
+  name: string
+  count: number
 }
 
 export interface OrderItem {
@@ -34,8 +42,8 @@ export interface OrderItem {
   total: number
   comment?: string
   markCodes?: string[]
+  dishBindings?: DishBinding[]
 }
-
 export interface Order {
   id: string
   tableId: number
@@ -48,13 +56,35 @@ export interface Order {
   comment?: string
 }
 
+export interface TableOrderData {
+  items: OrderItem[]
+  comment: string
+  tags: string[]
+  modifiers: string[]
+  guestCount: number
+  openTime?: string
+  waiterId?: number
+  waiterName?: string
+}
+
+export interface TableBookingData {
+  date: string
+  time: string
+  name: string
+  phone: string
+  guestCount: number
+}
+
 export interface KitchenItem {
   id: number
+  menuItemId?: number
   name: string
   quantity: number
   unitPrice: number
   total: number
   status: 'sent' | 'preparing' | 'ready' | 'waiting'
+  sub?: boolean
+  rest?: boolean
 }
 
 export interface ServiceCall {
@@ -97,6 +127,7 @@ export type Screen =
   | 'menu'
   | 'order'
   | 'kitchen'
+  | 'orders'
   | 'history'
   | 'payment'
   | 'cashier_payment'
@@ -109,9 +140,11 @@ export type Screen =
   | 'admin_history'
   | 'admin_menu'
   | 'admin_stock'
+  | 'admin_ingredients'
   | 'admin_settings'
   | 'admin_modifiers'
   | 'admin_reports'
+  | 'admin_shift'
   | 'admin_support'
   | 'fiscal_module'
 
@@ -124,10 +157,14 @@ export interface HistoryEntry {
   itemCount: number
   total: number
   status: 'sent' | 'paid' | 'cancelled'
-  paymentMethod?: 'cash' | 'card' | 'click'
+  paymentMethod?: 'cash' | 'card' | 'click' | 'split'
+  cashPaymentSum?: number
+  cardPaymentSum?: number
   createdByRole?: string
   createdByName?: string
-  items?: { id: number; name: string; quantity: number; unitPrice: number; total: number; mxik?: string; photo?: string }[]
+  guestCount?: number
+  shiftNumber?: string
+  items?: { id: number; name: string; quantity: number; unitPrice: number; total: number; mxik?: string; photo?: string; markCodes?: string[] }[]
   discountType?: 'percent' | 'amount'
   discountPercent?: number
   discountAmount?: number
@@ -140,6 +177,8 @@ export interface HistoryEntry {
   cabinetLocId?: string
   ofdStatus?: 'pending' | 'synced'
   factoryId?: string
+  fiscalQueueId?: string
+  localOnlyReceipt?: boolean
 }
 
 export interface Branch {

@@ -118,9 +118,22 @@ const MIGRATIONS = [
         items TEXT, reason TEXT, cashier TEXT, status TEXT DEFAULT 'pending',
         fiscal_sign TEXT, created_at TEXT DEFAULT (datetime('now'))
       )`);
+      db.run(`CREATE TABLE IF NOT EXISTS data_store (
+        key TEXT PRIMARY KEY, value TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now'))
+      )`);
       db.run(`CREATE TABLE IF NOT EXISTS schema_migrations (
         version INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL, applied_at TEXT DEFAULT (datetime('now'))
+      )`);
+    }
+  },
+  {
+    name: 'data_store_table',
+    up: (db) => {
+      db.run(`CREATE TABLE IF NOT EXISTS data_store (
+        key TEXT PRIMARY KEY, value TEXT NOT NULL,
+        updated_at TEXT DEFAULT (datetime('now'))
       )`);
     }
   }

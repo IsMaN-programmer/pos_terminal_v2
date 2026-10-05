@@ -1,4 +1,5 @@
 import { toPng } from 'html-to-image'
+import { posFetch } from '../services/mobileConnection'
 
 export type PaperSize = '58' | '80'
 
@@ -75,10 +76,10 @@ export async function captureReceiptPng(node: HTMLElement): Promise<{ dataUrl: s
  * the printer reproduces exactly what's shown in the preview - correct width
  * for 58/80mm paper, real bold fonts, logo and QR code included.
  */
-export async function printReceiptNode(printerName: string, node: HTMLElement, paperSize: PaperSize): Promise<void> {
+export async function printReceiptNode(printerName: string, node: HTMLElement, paperSize: PaperSize, logical?: 'receipt' | 'kitchen' | 'waiter'): Promise<void> {
   const { dataUrl, widthPx, heightPx } = await captureReceiptPng(node)
 
-  const res = await fetch('/api/print-image', {
+  const res = await posFetch('/api/print-image', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -87,6 +88,7 @@ export async function printReceiptNode(printerName: string, node: HTMLElement, p
       paperWidthMm: PRINTABLE_WIDTH_MM[paperSize],
       widthPx,
       heightPx,
+      logical,
     }),
   })
 

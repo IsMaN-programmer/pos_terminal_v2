@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { useT } from './i18n'
+import refreshIcon from './assets/icons/refresh.png'
 
 const INITIAL_STATE: UpdateState = {
   status: 'idle',
@@ -117,29 +118,29 @@ export function UpdateModals() {
           <div className="updater-line" />
           {downloaded ? (
             <>
-              <div className="updater-title">{t('Приложение обновлено', 'Ilova yangilandi')}</div>
+              <div className="updater-title">{t('Приложение обновлено', 'Ilova yangilandi', 'App updated')}</div>
               <div className="updater-desc">
-                {t('Обновление', 'Yangilanish')} v{state.version} {t('успешно загружено.', 'muvaffaqiyatli yuklab olindi.')}
+                {t('Обновление', 'Yangilanish', 'Update')} v{state.version} {t('успешно загружено.', 'muvaffaqiyatli yuklab olindi.', 'successfully downloaded.')}
               </div>
               <div className="updater-actions">
-                <button className="updater-btn update" onClick={install}>{t('Перезагрузить', 'Qayta ishga tushirish')}</button>
+                <button className="updater-btn update" onClick={install}>{t('Перезагрузить', 'Qayta ishga tushirish', 'Restart')}</button>
               </div>
             </>
           ) : downloading ? (
             <>
-              <div className="updater-title">{t('Загрузка обновления', 'Yangilanish yuklanmoqda')}</div>
-              <div className="updater-desc">{t('Загружается обновление', 'Yangilanish yuklanmoqda')} v{state.version}...</div>
+              <div className="updater-title">{t('Загрузка обновления', 'Yangilanish yuklanmoqda', 'Downloading update')}</div>
+              <div className="updater-desc">{t('Загружается обновление', 'Yangilanish yuklanmoqda', 'Update downloading')} v{state.version}...</div>
               <ProgressBar percent={state.percent} />
               <div className="updater-percent">{state.percent}%</div>
             </>
           ) : (
             <>
-              <div className="updater-title">{t('Обновление обязательно', 'Yangilanish majburiy')}</div>
+              <div className="updater-title">{t('Обновление обязательно', 'Yangilanish majburiy', 'Update required')}</div>
               <div className="updater-desc">
-                {state.releaseNotes || t('Доступна новая версия приложения. Обновление обязательно для продолжения работы.', 'Ilovaning yangi versiyasi mavjud. Ishlashni davom ettirish uchun yangilash majburiy.')}
+                {state.releaseNotes || t('Доступна новая версия приложения. Обновление обязательно для продолжения работы.', 'Ilovaning yangi versiyasi mavjud. Ishlashni davom ettirish uchun yangilash majburiy.', 'A new version of the app is available. Update required to continue.')}
               </div>
               <div className="updater-actions">
-                <button className="updater-btn update" onClick={download}>{t('Обновить', 'Yangilash')}</button>
+                <button className="updater-btn update" onClick={download}>{t('Обновить', 'Yangilash', 'Update')}</button>
               </div>
             </>
           )}
@@ -157,25 +158,25 @@ export function UpdateModals() {
         <div className="updater-line" />
         {state.status === 'checking' && (
           <>
-            <div className="updater-title">{t('Проверка обновлений', 'Yangilanishlar tekshirilmoqda')}</div>
-            <div className="updater-desc">{t('Поиск новых версий...', 'Yangi versiyalar qidirilmoqda...')}</div>
+            <div className="updater-title">{t('Проверка обновлений', 'Yangilanishlar tekshirilmoqda', 'Checking for updates')}</div>
+            <div className="updater-desc">{t('Поиск новых версий...', 'Yangi versiyalar qidirilmoqda...', 'Searching for new versions...')}</div>
             <div className="updater-checking-spinner" />
           </>
         )}
         {state.status === 'available' && (
           <>
-            <div className="updater-title">{t('Доступно обновление', 'Yangilanish mavjud')} v{state.version}</div>
-            <div className="updater-desc">{state.releaseNotes || t('Доступна новая версия приложения.', 'Ilovaning yangi versiyasi mavjud.')}</div>
+            <div className="updater-title">{t('Доступно обновление', 'Yangilanish mavjud', 'Update available')} v{state.version}</div>
+            <div className="updater-desc">{state.releaseNotes || t('Доступна новая версия приложения.', 'Ilovaning yangi versiyasi mavjud.', 'A new version of the app is available.')}</div>
             <div className="updater-actions">
-              <button className="updater-btn later" onClick={closeInfo}>{t('Позже', 'Keyinroq')}</button>
-              <button className="updater-btn update" onClick={download}>{t('Обновить', 'Yangilash')}</button>
+              <button className="updater-btn later" onClick={closeInfo}>{t('Позже', 'Keyinroq', 'Later')}</button>
+              <button className="updater-btn update" onClick={download}>{t('Обновить', 'Yangilash', 'Update')}</button>
             </div>
           </>
         )}
         {state.status === 'not-available' && (
           <>
-            <div className="updater-title">{t('Обновление не найдено', 'Yangilanish topilmadi')}</div>
-            <div className="updater-desc">{t('У вас установлена последняя версия приложения.', 'Sizda ilovaning eng so\'nggi versiyasi o\'rnatilgan.')}</div>
+            <div className="updater-title">{t('Обновление не найдено', 'Yangilanish topilmadi', 'No update found')}</div>
+            <div className="updater-desc">{t('У вас установлена последняя версия приложения.', 'Sizda ilovaning eng so\'nggi versiyasi o\'rnatilgan.', 'You have the latest version of the app installed.')}</div>
             <div className="updater-actions">
               <button className="updater-btn update" onClick={closeInfo}>OK</button>
             </div>
@@ -183,8 +184,8 @@ export function UpdateModals() {
         )}
         {state.status === 'error' && (
           <>
-            <div className="updater-title">{t('Ошибка проверки обновлений', 'Yangilanishlarni tekshirishda xato')}</div>
-            <div className="updater-desc">{state.error || t('Не удалось проверить наличие обновлений. Проверьте подключение к интернету.', 'Yangilanishlar mavjudligini tekshirib bo\'lmadi. Internetga ulanishni tekshiring.')}</div>
+            <div className="updater-title">{t('Ошибка проверки обновлений', 'Yangilanishlarni tekshirishda xato', 'Failed to check for updates')}</div>
+            <div className="updater-desc">{state.error || t('Не удалось проверить наличие обновлений. Проверьте подключение к интернету.', 'Yangilanishlar mavjudligini tekshirib bo\'lmadi. Internetga ulanishni tekshiring.', 'Failed to check for updates. Please check your internet connection.')}</div>
             <div className="updater-actions">
               <button className="updater-btn update" onClick={closeInfo}>OK</button>
             </div>
@@ -192,8 +193,8 @@ export function UpdateModals() {
         )}
         {state.status === 'idle' && (
           <>
-            <div className="updater-title">{t('Проверка обновлений', 'Yangilanishlar tekshirilmoqda')}</div>
-            <div className="updater-desc">{t('Поиск новых версий...', 'Yangi versiyalar qidirilmoqda...')}</div>
+            <div className="updater-title">{t('Проверка обновлений', 'Yangilanishlar tekshirilmoqda', 'Checking for updates')}</div>
+            <div className="updater-desc">{t('Поиск новых версий...', 'Yangi versiyalar qidirilmoqda...', 'Searching for new versions...')}</div>
             <div className="updater-checking-spinner" />
           </>
         )}
@@ -205,23 +206,21 @@ export function UpdateModals() {
 export function UpdateButton() {
   const { state, openInfo } = useUpdater()
   const t = useT()
-  if (!window.electronAPI) return null
+  const inElectron = !!window.electronAPI
   const downloading = state.status === 'downloading'
   const hasUpdate = state.status === 'available' && !state.isRequired
   return (
     <button
       className={`sidebar-btn sidebar-update-btn${hasUpdate ? ' has-update' : ''}`}
-      onClick={openInfo}
-      title={downloading ? t('Загрузка обновления...', 'Yangilanish yuklanmoqda...') : t('Обновление', 'Yangilanish')}
+      onClick={() => { if (inElectron) openInfo() }}
+      title={downloading ? t('Загрузка обновления...', 'Yangilanish yuklanmoqda...', 'Downloading update...') : t('Обновление', 'Yangilanish', 'Update')}
     >
       <span className="sidebar-icon updater-sidebar-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 12a9 9 0 1 1-2.64-6.36" />
-          <polyline points="21 3 21 9 15 9" />
-        </svg>
-        {downloading && <span className="update-spinner-small" />}
-        {hasUpdate && <span className="updater-dot" />}
+        <img src={refreshIcon} alt="" className="sidebar-nav-img" />
+        {inElectron && downloading && <span className="update-spinner-small" />}
+        {inElectron && hasUpdate && <span className="updater-dot" />}
       </span>
+      <span className="sidebar-label">{t('Обновление', 'Yangilanish', 'Update')}</span>
     </button>
   )
 }

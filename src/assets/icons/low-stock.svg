@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t d">
+  <title id="t">Низкий остаток</title>
+  <desc id="d">Почти пустая коробка со знаком предупреждения</desc>
+  <defs>
+    <linearGradient id="g" x1="29" y1="28" x2="227" y2="228" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#EA580C"/>
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="208" height="208" rx="52" fill="url(#g)"/>
+  <path d="m60 91 68-34 68 34-68 35-68-35Z" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M60 91v78l68 34 68-34V91M128 126v77" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round"/>
+  <path d="m170 137 36 62h-72l36-62Z" fill="url(#g)" stroke="#FEF3C7" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M170 158v17" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="170" cy="187" r="5" fill="#fff"/>
+</svg>
