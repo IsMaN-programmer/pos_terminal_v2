@@ -65,7 +65,8 @@
     "publish": {
       "provider": "github",
       "owner": "IsMaN-programmer",
-      "repo": "pos_terminal_v2"
+      "repo": "pos_terminal_v2",
+      "releaseType": "release"
     },
     "win": {
       "target": [
