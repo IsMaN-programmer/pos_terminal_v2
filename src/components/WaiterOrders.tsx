@@ -372,12 +372,7 @@ export default function WaiterOrders({
               <span className="orders-stage-arrow">›</span>
               <div className={`orders-stage${billIssued || sentCashier ? ' stage-active' : ''}`}>
                 <span className="orders-stage-icon"><StageIcon icon="bill" /></span>
-                <span className="orders-stage-label">{t('Выдать счет', 'Hisob berish', 'Issue bill')}</span>
-              </div>
-              <span className="orders-stage-arrow">›</span>
-              <div className={`orders-stage${sentCashier ? ' stage-active' : ''}`}>
-                <span className="orders-stage-icon"><StageIcon icon="cashier" /></span>
-                <span className="orders-stage-label">{t('Отправить на кассу', 'Kassaga yuborish', 'Send to cash register')}</span>
+                <span className="orders-stage-label">{t('Счет на кассе', 'Hisob kassada', 'Bill at cashier')}</span>
               </div>
             </div>
 
@@ -412,7 +407,14 @@ export default function WaiterOrders({
         <PrintLoadingModal
           onCancel={() => setPrintingAvans(false)}
           task={printAvansTask}
-          onComplete={() => { setPrintingAvans(false); if (activeTable) onIssueBill(activeTable.id) }}
+          onComplete={() => {
+            setPrintingAvans(false)
+            if (!activeTable) return
+            // Bill printed — mark it issued AND send to cashier at once,
+            // so the waiter can't forget the second tap.
+            onIssueBill(activeTable.id)
+            onSendToCashier(activeTable)
+          }}
         />
       )}
 

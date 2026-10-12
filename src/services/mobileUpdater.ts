@@ -78,7 +78,8 @@ export async function checkForMobileUpdate(): Promise<MobileUpdateInfo | null> {
   return {
     version: remote,
     tag: rel.tag_name,
-    apkUrl: apk.browser_download_url,
+    // Direct public link (no API Accept-header needed, redirect-friendly).
+    apkUrl: `https://github.com/${GH_OWNER}/${GH_REPO}/releases/download/${encodeURIComponent(rel.tag_name)}/${encodeURIComponent(apk.name)}`,
     apkName: apk.name,
     notes,
     required: /\[required\]/i.test(notes),
@@ -87,9 +88,7 @@ export async function checkForMobileUpdate(): Promise<MobileUpdateInfo | null> {
 
 export function mobileUpdateError(e: unknown): string {
   const msg = e instanceof Error ? e.message : String(e || '')
-  if (/network|fetch|failed/i.test(msg)) {
-    return tr('Нет соединения. Проверьте интернет и попробуйте снова.', 'Aloqa yo‘q. Internetni tekshirib qayta urinib ko‘ring.', 'No connection. Check the internet and try again.')
-  }
+  // Show the real cause (a masked "no connection" hid real failures before).
   return msg || tr('Не удалось скачать обновление', 'Yangilanishni yuklab bo‘lmadi', 'Failed to download the update')
 }
 
@@ -110,6 +109,9 @@ export async function downloadAndInstallApk(
 ): Promise<void> {
   const { Filesystem, Directory } = await import('@capacitor/filesystem')
   onProgress(0)
+  try {
+    await Filesystem.mkdir({ path: 'updates', directory: Directory.Cache, recursive: true })
+  } catch { /* already exists */ }
   const path = `updates/${info.apkName}`
   const progressListener = await Filesystem.addListener('progress', (p: { url?: string; bytes?: number; contentLength?: number }) => {
     if (p.url && !info.apkUrl.startsWith(p.url) && !p.url.startsWith(info.apkUrl)) return

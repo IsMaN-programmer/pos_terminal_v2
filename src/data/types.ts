@@ -146,6 +146,8 @@ export type Screen =
   | 'admin_reports'
   | 'admin_shift'
   | 'admin_support'
+  | 'admin_usage'
+  | 'admin_salary'
   | 'fiscal_module'
 
 export interface HistoryEntry {
@@ -157,9 +159,11 @@ export interface HistoryEntry {
   itemCount: number
   total: number
   status: 'sent' | 'paid' | 'cancelled'
-  paymentMethod?: 'cash' | 'card' | 'click' | 'split'
+  paymentMethod?: 'cash' | 'card' | 'click' | 'uzqr' | 'split'
   cashPaymentSum?: number
   cardPaymentSum?: number
+  uzqrPaymentSum?: number
+  uzqrPayId?: string
   createdByRole?: string
   createdByName?: string
   guestCount?: number

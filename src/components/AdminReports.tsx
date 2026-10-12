@@ -70,7 +70,8 @@ export default function AdminReports({ history = [], presetDateFrom, presetDateT
   const PAYMENT_LABELS: Record<string, string> = {
     cash: t('Наличные', 'Naqd', 'Cash'),
     card: t('Терминал', 'Terminal', 'Terminal'),
-    click: t('Другое', 'Boshqa', 'Other'),
+    click: 'UzQR',
+    uzqr: 'UzQR',
     split: t('Разделение', 'Bo\'lish', 'Split'),
   }
 
@@ -339,7 +340,7 @@ const current = local[matchIndex]
       const [dateStr, timeStr] = e.timestamp.split(' ')
       const orderNum = e.receiptSeq || history.indexOf(e) + 1
       const ROLE: Record<string, string> = { waiter: t('Официант', 'Ofitsiant', 'Waiter'), cashier: t('Кассир', 'Kassir', 'Cashier'), admin: t('Администратор', 'Administrator', 'Administrator') }
-      const METHOD: Record<string, string> = { cash: t('Наличной', 'Naqd', 'Cash'), card: t('Карта', 'Karta', 'Card'), click: t('Другое', 'Boshqa', 'Other') }
+      const METHOD: Record<string, string> = { cash: t('Наличной', 'Naqd', 'Cash'), card: t('Карта', 'Karta', 'Card'), click: 'UzQR', uzqr: 'UzQR' }
 
       let qrImgSrc = ''
       if (e.qrCodeUrl) {
@@ -403,7 +404,8 @@ const current = local[matchIndex]
     const payLabels: Record<string, string> = {
       cash: tr('Наличные', 'Naqd', 'Cash'),
       card: tr('Терминал', 'Terminal', 'Terminal'),
-      click: tr('Другое', 'Boshqa', 'Other'),
+      click: 'UzQR',
+      uzqr: 'UzQR',
       split: tr('Разделение', 'Bo\'lish', 'Split'),
     }
     const orderLabels: Record<string, string> = {
@@ -455,7 +457,7 @@ const current = local[matchIndex]
             <option value="all">{t('Все типы', 'Barcha turlar', 'All types')}</option>
             <option value="cash">{t('Наличные', 'Naqd', 'Cash')}</option>
             <option value="card">{t('Терминал', 'Terminal', 'Terminal')}</option>
-            <option value="click">{t('Другое', 'Boshqa', 'Other')}</option>
+            <option value="uzqr">UzQR</option>
             <option value="split">{t('Разделение', 'Bo\'lish', 'Split')}</option>
           </select>
           <button className="at-action-btn at-action-sync" disabled={syncing} onClick={syncWithCabinet}>

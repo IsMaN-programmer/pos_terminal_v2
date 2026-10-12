@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { dataStore } from './services/dataStore'
 import { useT, getLang, setLang, type Lang } from './i18n'
 import { isNativeMobile } from './services/capacitor'
+import { saveMobileConnection } from './services/mobileConnection'
 
 const PIN_LANGS: Lang[] = ['ru', 'uz', 'en']
 const PIN_LANG_SHORT: Record<Lang, string> = { ru: 'RU', uz: 'UZ', en: 'EN' }
@@ -107,6 +108,23 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
       {isNativeMobile() && (
         <button
           type="button"
+          className="pin-lang-btn pin-exit-btn"
+          title={t('Отключиться от кассы', 'Kassadan uzilish', 'Disconnect from cash register')}
+          onClick={() => {
+            saveMobileConnection('')
+            window.dispatchEvent(new Event('pos:mobile-connection-changed'))
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+      )}
+      {isNativeMobile() && (
+        <button
+          type="button"
           className="pin-lang-btn"
           onClick={() => {
             const cur = getLang()
@@ -176,6 +194,8 @@ export default function PinScreen({ onComplete }: PinScreenProps) {
               <button className="numpad-btn" onClick={() => handleNumpad('0')}>0</button>
               <button className="numpad-btn" onClick={() => handleNumpad('back')}>⌫</button>
             </div>
+
+
           </div>
         </div>
       </div>

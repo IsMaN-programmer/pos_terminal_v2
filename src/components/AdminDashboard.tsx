@@ -28,7 +28,7 @@ export default function AdminDashboard({ history = [], tables, tableOrders = {} 
   const paymentLabels: Record<string, { label: string; color: string }> = {
     cash: { label: t('Наличные', 'Naqd', 'Cash'), color: '#22c55e' },
     card: { label: t('Карта', 'Karta', 'Card'), color: '#3b82f6' },
-    click: { label: t('Другое', 'Boshqa', 'Other'), color: '#a855f7' },
+    uzqr: { label: 'UzQR', color: '#a855f7' },
   }
   const [showDatePicker, setShowDatePicker] = useState(false)
   const [dateFrom, setDateFrom] = useState('')
@@ -125,18 +125,20 @@ export default function AdminDashboard({ history = [], tables, tableOrders = {} 
     const stats: Record<string, { count: number; sum: number }> = {
       cash: { count: 0, sum: 0 },
       card: { count: 0, sum: 0 },
-      click: { count: 0, sum: 0 },
+      uzqr: { count: 0, sum: 0 },
     }
     filtered.forEach(h => {
-      if (h.paymentMethod && stats[h.paymentMethod]) {
-        stats[h.paymentMethod].count++
-        stats[h.paymentMethod].sum += h.total
+      // Legacy 'click' payments are UzQR predecessors — same bucket.
+      const key = h.paymentMethod === 'click' ? 'uzqr' : h.paymentMethod
+      if (key && stats[key]) {
+        stats[key].count++
+        stats[key].sum += h.total
       }
     })
     return stats
   }, [filtered])
 
-  const totalPaymentSum = paymentStats.cash.sum + paymentStats.card.sum + paymentStats.click.sum
+  const totalPaymentSum = paymentStats.cash.sum + paymentStats.card.sum + paymentStats.uzqr.sum
 
   return (
     <div className="screen admin-dashboard">

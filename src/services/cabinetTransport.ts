@@ -2,12 +2,13 @@ import { CapacitorHttp } from '@capacitor/core'
 import { isNativeMobile } from './capacitor'
 
 const PROXY_PREFIX = '/api/cabinet-proxy/'
+const UZQR_PREFIX = '/api/uzqr-proxy/'
 const CABINET_BASE = 'https://cabinet.posvk.uz/api/cabinet-api/'
 
 /** Use the desktop proxy on web/Electron, native HTTP in the Android WebView. */
 export async function cabinetFetch(path: string, init: RequestInit = {}): Promise<Response> {
   if (!isNativeMobile()) return fetch(path, init)
-  if (!path.startsWith(PROXY_PREFIX)) throw new Error('Invalid Cabinet API path')
+  if (!path.startsWith(PROXY_PREFIX) && !path.startsWith(UZQR_PREFIX)) throw new Error('Invalid Cabinet API path')
 
   const headers: Record<string, string> = {}
   new Headers(init.headers).forEach((value, key) => { headers[key] = value })
@@ -20,8 +21,11 @@ export async function cabinetFetch(path: string, init: RequestInit = {}): Promis
     throw new Error('Unsupported Cabinet request body')
   }
 
+  const url = path.startsWith(UZQR_PREFIX)
+    ? CABINET_BASE + path.slice(UZQR_PREFIX.length)
+    : CABINET_BASE + path.slice(PROXY_PREFIX.length)
   const result = await CapacitorHttp.request({
-    url: CABINET_BASE + path.slice(PROXY_PREFIX.length),
+    url,
     method,
     headers,
     data,

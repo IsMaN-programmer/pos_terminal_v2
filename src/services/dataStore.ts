@@ -46,6 +46,7 @@ const SHARED_KEYS = new Set([
   'pos_v2_cabinet_company_id',
   'pos_v2_cabinet_cash_id',
   'pos_v2_cabinet_user_id',
+  'pos_v2_company_point_key',
   'pos_v2_cabinet_shift_ids',
   'pos_v2_cabinet_catalogs',
   'pos_v2_receipt_logo',

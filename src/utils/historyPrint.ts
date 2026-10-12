@@ -18,7 +18,8 @@ const ROLE_LABELS: Record<string, string> = {
 const METHOD_LABELS: Record<string, string> = {
   cash: tr('Наличной', 'Naqd', 'Cash'),
   card: tr('Карта', 'Karta', 'Card'),
-  click: tr('Другое', 'Boshqa', 'Other'),
+  click: 'UzQR',
+  uzqr: 'UzQR',
   split: tr('Разделение', 'Bo\'lish', 'Split'),
 }
 

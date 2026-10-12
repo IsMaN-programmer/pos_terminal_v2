@@ -59,7 +59,12 @@
       "backend/**/*",
       "electron/**/*",
       "public/**/*",
-      "package.json"
+      "package.json",
+      "!node_modules/@capacitor{,/**}",
+      "!node_modules/@capacitor-mlkit{,/**}",
+      "!node_modules/@e-is{,/**}",
+      "!node_modules/cordova-*{,/**}",
+      "!node_modules/.cache{,/**}"
     ],
     "publish": {
       "provider": "github",

@@ -265,6 +265,28 @@ app.all("/api/cabinet-proxy/*", async (req, res) => {
   }
 });
 
+// UzQR payments: Flutter's Dio concatenates base + path, so the real
+// endpoints live under /api/cabinet-api/api/v1/payments/uzqr/...
+app.all("/api/uzqr-proxy/*", async (req, res) => {
+  const proxyPath = req.url.replace("/api/uzqr-proxy/", "");
+  try {
+    const cabinetBase = "https://cabinet.posvk.uz/api/cabinet-api";
+    const auth = req.headers.authorization || "";
+    const headers = { "Content-Type": "application/json", "Accept": "application/json" };
+    if (auth) headers["Authorization"] = auth;
+    const fdRes = await fetch(`${cabinetBase}/${proxyPath}`, {
+      method: req.method,
+      headers,
+      body: req.method !== "GET" ? JSON.stringify(req.body || {}) : undefined
+    });
+    const text = await fdRes.text();
+    try { res.status(fdRes.status).json(JSON.parse(text)); }
+    catch { res.status(fdRes.status).send(text); }
+  } catch (e) {
+    res.status(502).json({ error: "UzQR API unavailable", message: e.message });
+  }
+});
+
 app.all("/api/marking-proxy/*", async (req, res) => {
   const proxyPath = req.url.replace("/api/marking-proxy/", "");
   try {

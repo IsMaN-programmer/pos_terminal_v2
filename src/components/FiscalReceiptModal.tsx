@@ -26,8 +26,8 @@ interface FiscalReceiptModalProps {
   qqsAmount: number
   итого: number
   totalSum: number
-  selectedMethod: 'cash' | 'card' | 'click' | null
-  splitAmounts?: { cash: number; card: number; click: number } | null
+  selectedMethod: 'cash' | 'card' | 'uzqr' | null
+  splitAmounts?: { cash: number; card: number; uzqr: number } | null
   fmTerminalId: string
   fiscalSign?: string
   qrCodeUrl?: string
@@ -49,7 +49,8 @@ export default function FiscalReceiptModal({
   const methodLabel: Record<string, string> = {
     cash: t('Наличной', 'Naqd', 'Cash'),
     card: t('Карта', 'Karta', 'Card'),
-    click: t('Другое', 'Boshqa', 'Other'),
+    click: 'UzQR',
+    uzqr: 'UzQR',
   }
   const [paperSize, setPaperSize] = useState<PaperSize>((dataStore.getItem(PAPER_KEY) as PaperSize) || '58')
   const [orgStir, setOrgStir] = useState(getCompanyTin)
@@ -172,7 +173,7 @@ export default function FiscalReceiptModal({
               <span style={{ fontWeight: 700, color: '#000', marginBottom: 2 }}>{t('Разделение счета:', 'Hisobni bo\'lish:', 'Split bill:')}</span>
               {splitAmounts.cash > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Наличной', 'Naqd', 'Cash')}</span><span style={{ fontWeight: 700 }}>{splitAmounts.cash.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span></div>}
               {splitAmounts.card > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Карта', 'Karta', 'Card')}</span><span style={{ fontWeight: 700 }}>{splitAmounts.card.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span></div>}
-              {splitAmounts.click > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>{t('Другое', 'Boshqa', 'Other')}</span><span style={{ fontWeight: 700 }}>{splitAmounts.click.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span></div>}
+              {splitAmounts.uzqr > 0 && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>UzQR</span><span style={{ fontWeight: 700 }}>{splitAmounts.uzqr.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span></div>}
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0', fontSize: 11 }}>

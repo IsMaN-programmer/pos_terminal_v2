@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { useT } from './i18n'
 import refreshIcon from './assets/icons/refresh.png'
@@ -201,6 +201,37 @@ export function UpdateModals() {
       </div>
     </div>
   )
+}
+
+/**
+ * Background update check for every role (waiters/cashiers never open
+ * the admin sidebar button, so without this they would never see updates).
+ * On a non-required update the info modal opens automatically, wherever
+ * the user is. Forced updates already render globally via UpdateModals.
+ */
+export function DesktopAutoUpdate() {
+  const { state, openInfo } = useUpdater()
+  const openedRef = useRef(false)
+  const [armed, setArmed] = useState(false)
+
+  useEffect(() => {
+    if (!window.electronAPI) return
+    const timer = setTimeout(() => {
+      window.electronAPI!.checkForUpdates().catch(() => {})
+      setArmed(true)
+    }, 6000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  useEffect(() => {
+    if (!armed || openedRef.current) return
+    if (state.status === 'available' && !state.isRequired) {
+      openedRef.current = true
+      openInfo()
+    }
+  }, [armed, state.status, state.isRequired, openInfo])
+
+  return null
 }
 
 export function UpdateButton() {

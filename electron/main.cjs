@@ -82,8 +82,11 @@ async function githubReleaseNotes(version) {
 }
 
 function setupAutoUpdater() {
-  autoUpdater.autoDownload = false
-  autoUpdater.autoInstallOnAppQuit = true
+autoUpdater.autoDownload = false
+// Single explicit install path via the UI button (quitAndInstall below).
+// autoInstallOnAppQuit stays off so a manual quit can't spawn a second
+// installer next to it and fight over locked files.
+autoUpdater.autoInstallOnAppQuit = false
   autoUpdater.setFeedURL({
     provider: 'github',
     owner: 'IsMaN-programmer',
@@ -269,7 +272,12 @@ ipcMain.handle('update:download', async () => {
   return updateState
 })
 ipcMain.handle('update:install', async () => {
-  autoUpdater.quitAndInstall()
+  // Silent install: no GUI wizard, the old version is closed/killed
+  // automatically. A visible installer races with the still-exiting app
+  // and fails with "close the app" / "can't delete old files" errors.
+  // isForceRunAfter=true is required: the assisted installer only
+  // relaunches the app after a silent install when --force-run is passed.
+  autoUpdater.quitAndInstall(true, true)
   return true
 })
 
@@ -293,6 +301,21 @@ ipcMain.handle('pdf:generate', async (_event, html) => {
     if (!win.isDestroyed()) win.destroy()
   }
 })
+
+// Single instance: a second copy would share the backend (see ensureBackend)
+// yet hold the install dir locked, which breaks updates with
+// "can't delete old files". Focus the existing window instead.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : BrowserWindow.getAllWindows()[0]
+    if (win) {
+      if (win.isMinimized()) win.restore()
+      win.focus()
+    }
+  })
+}
 
 app.whenReady().then(async () => {
   app.setAppUserModelId('uz.posvk.posterminal')

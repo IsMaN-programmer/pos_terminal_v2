@@ -22,7 +22,7 @@ interface AvansReceiptData extends BaseReceiptData {
 interface FiscalReceiptData extends BaseReceiptData {
   totalSum: number; serviceAmount: number; servicePercent: number
   discountValue: number; qqsAmount: number; итого: number
-  selectedMethod: string; splitAmounts?: { cash: number; card: number; click: number } | null
+  selectedMethod: string; splitAmounts?: { cash: number; card: number; uzqr: number } | null
   fiscalSign?: string; qrCodeUrl?: string; licenseNumber?: string
 }
 
@@ -103,7 +103,7 @@ export function buildFiscalReceiptHtml(data: FiscalReceiptData, qrImgSrc: string
       <span style="font-weight:700;color:#000;margin-bottom:2px">${tr('Разделение счета', 'Hisobni bo\'lish', 'Split bill')}:</span>
       ${data.splitAmounts.cash > 0 ? `<div style="display:flex;justify-content:space-between"><span>${tr('Наличной', 'Naqd', 'Cash')}</span><span style="font-weight:700">${data.splitAmounts.cash.toLocaleString()} ${tr('сум', 'so\'m', 'sum')}</span></div>` : ''}
       ${data.splitAmounts.card > 0 ? `<div style="display:flex;justify-content:space-between"><span>${tr('Карта', 'Karta', 'Card')}</span><span style="font-weight:700">${data.splitAmounts.card.toLocaleString()} ${tr('сум', 'so\'m', 'sum')}</span></div>` : ''}
-      ${data.splitAmounts.click > 0 ? `<div style="display:flex;justify-content:space-between"><span>${tr('Другое', 'Boshqa', 'Other')}</span><span style="font-weight:700">${data.splitAmounts.click.toLocaleString()} ${tr('сум', 'so\'m', 'sum')}</span></div>` : ''}
+      ${data.splitAmounts.uzqr > 0 ? `<div style="display:flex;justify-content:space-between"><span>UzQR</span><span style="font-weight:700">${data.splitAmounts.uzqr.toLocaleString()} ${tr('сум', 'so\'m', 'sum')}</span></div>` : ''}
     </div>
   ` : `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:12px">

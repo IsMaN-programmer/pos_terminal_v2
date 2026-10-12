@@ -27,6 +27,8 @@ import AdminModifiers from './components/AdminModifiers'
 import AdminReports from './components/AdminReports'
 import AdminShift from './components/AdminShift'
 import AdminSupport from './components/AdminSupport'
+import AdminUsage from './components/AdminUsage'
+import AdminSalary from './components/AdminSalary'
 import FiscalModule from './components/FiscalModule'
 import { cabinetShiftId } from './services/receiptSync'
 import { syncCabinetShifts, type ShiftCabinetStatus } from './services/shiftSync'
@@ -38,6 +40,7 @@ import type { CashierPaymentData } from './components/CashierPayment'
 import CheckReceipt from './components/CheckReceipt'
 import Profile from './components/Profile'
 import { UpdaterProvider, UpdateModals } from './updater'
+import { checkFmChanged, saveFmBinding, type FmChangeInfo } from './services/fmGuard'
 import { initNetwork, reconnectNetwork, waitForNetworkConfig, waitForNetworkSocket, useNetworkStore } from './services/networkSocket'
 import { isNativeMobile } from './services/capacitor'
 import { mobileConnection, saveMobileConnection } from './services/mobileConnection'
@@ -106,6 +109,8 @@ async function waitForBackend(timeoutMs = 12000): Promise<void> {
 }
 
 const SESSION_KEY = 'pos_v2_session'
+// How often the attached fiscal module is re-verified on any screen.
+const FM_POLL_MS = 15000
 
 function App() {
   const t = useT()
@@ -151,13 +156,72 @@ function App() {
   const [orderGuestCount, setOrderGuestCount] = useState(1)
   const [orderOpenTime, setOrderOpenTime] = useState('')
   const [toast, setToast] = useState<string | null>(null)
+  const [fmChange, setFmChange] = useState<FmChangeInfo | null>(null)
+
+  // FM-change guard (like posvk_mobile / pos_system): watches the attached
+  // fiscal module on EVERY screen — desktop polls the local FiscalDrive
+  // service, mobile polls the master kassa. On mismatch warns about unsent
+  // receipts / open shift and drops to login.
+  useEffect(() => {
+    if (phase !== 'app' || fmChange) return
+    let cancelled = false
+    const tick = () => {
+      void checkFmChanged().then(info => { if (!cancelled && info) setFmChange(prev => prev ?? info) })
+    }
+    tick()
+    const timer = setInterval(tick, FM_POLL_MS)
+    return () => { cancelled = true; clearInterval(timer) }
+  }, [phase, currentScreen, fmChange])
+
+  const handleFmChangeConfirm = useCallback(() => {
+    if (fmChange) saveFmBinding(fmChange.newFactoryId, fmChange.newTerminalId)
+    setFmChange(null)
+    dataStore.removeItem(SESSION_KEY)
+    if (isNativeMobile()) {
+      // A different FM means a different org context (menu, prices, staff),
+      // so fully disconnect: clear the saved kassa (otherwise the auto
+      // advance would bounce straight back to PIN), wipe local data and
+      // land on the connect screen. Queues with unsent receipts are kept
+      // (the dialog warned about them).
+      saveMobileConnection('')
+      resetMobileData()
+      setSelectedTable(null)
+      setOrderItems([])
+      setOrderComment('')
+      setOrderTags([])
+      setOrderModifiers([])
+      setOrderGuestCount(1)
+      setOrderOpenTime('')
+      setChangingTable(false)
+      setMenuEntry(false)
+      setBookingModalTable(null)
+      setReservingMode(false)
+      setCashierPaymentData(null)
+      setTables([])
+      setTableOrders({})
+      setTableBookings({})
+      setKitchenSent({})
+      setHistory([])
+      setShiftByStaff({})
+      setAvansPrintedSet(new Set())
+      setStaff(null)
+      setCurrentScreen('tables')
+      setPhase('connect')
+      void reconnectNetwork()
+      return
+    }
+    // Desktop returns to the username+password login.
+    setStaff(null)
+    setPhase('login')
+  }, [fmChange])
   const [cashierPaymentData, setCashierPaymentData] = useState<CashierPaymentData | null>(null)
   const [cpServicePercent, setCpServicePercent] = useState(0)
   const [cpDiscountType, setCpDiscountType] = useState<'percent' | 'amount'>('percent')
   const [cpDiscountPercent, setCpDiscountPercent] = useState(0)
   const [cpDiscountAmount, setCpDiscountAmount] = useState(0)
-  const [cpSelectedMethod, setCpSelectedMethod] = useState<'cash' | 'card' | 'click' | null>(null)
-  const [cpSplitAmounts, setCpSplitAmounts] = useState<{ cash: number; card: number; click: number } | null>(null)
+  const [cpSelectedMethod, setCpSelectedMethod] = useState<'cash' | 'card' | 'uzqr' | null>(null)
+  const [cpSplitAmounts, setCpSplitAmounts] = useState<{ cash: number; card: number; uzqr: number } | null>(null)
+  const [cpUzqrMeta, setCpUzqrMeta] = useState<{ payId?: string; invoiceId?: string } | null>(null)
   const prevTableId = useRef<number | null>(null)
 
   useEffect(() => {
@@ -168,6 +232,7 @@ function App() {
       setCpDiscountAmount(0)
       setCpSelectedMethod(null)
       setCpSplitAmounts(null)
+      setCpUzqrMeta(null)
     }
     if (selectedTable) prevTableId.current = selectedTable.id
   }, [selectedTable])
@@ -920,6 +985,7 @@ function App() {
       setCpDiscountAmount(0)
       setCpSelectedMethod(null)
       setCpSplitAmounts(null)
+      setCpUzqrMeta(null)
       prevTableId.current = null
       if (shiftEndRedirectKey) {
         updateShift(shiftEndRedirectKey, { active: false, startTime: '—', endTime: '—', ending: false })
@@ -1072,6 +1138,8 @@ function App() {
             onSelectedMethodChange={setCpSelectedMethod}
             splitAmounts={cpSplitAmounts}
             onSplitAmountsChange={setCpSplitAmounts}
+            uzqrMeta={cpUzqrMeta}
+            onUzqrMetaChange={setCpUzqrMeta}
           />
         )
       case 'check_receipt': {
@@ -1091,6 +1159,7 @@ function App() {
             discountAmount={pd.discountAmount}
             selectedMethod={pd.selectedMethod}
             splitAmounts={pd.splitAmounts || null}
+            uzqr={pd.uzqr}
             onBack={() => { saveCurrentOrder(); setCurrentScreen('cashier_payment') }}
             onComplete={(fiscalData?: { fiscalSign?: string; qrCodeUrl?: string; terminalId?: string; receiptSeq?: number; receiptId?: string; locId?: string; factoryId?: string; queuedId?: string }) => {
               decrementStock(pd.items, orderModifiers)
@@ -1121,7 +1190,9 @@ function App() {
                   status: fiscalIssued ? 'paid' : 'sent',
                   paymentMethod: pd.selectedMethod || (pd.splitAmounts ? 'split' as any : undefined),
                   cashPaymentSum: pd.splitAmounts?.cash ?? (pd.selectedMethod === 'cash' ? paymentTotal : 0),
-                  cardPaymentSum: pd.splitAmounts ? pd.splitAmounts.card + pd.splitAmounts.click : (pd.selectedMethod && pd.selectedMethod !== 'cash' ? paymentTotal : 0),
+                  cardPaymentSum: pd.splitAmounts?.card ?? (pd.selectedMethod === 'card' ? paymentTotal : 0),
+                  uzqrPaymentSum: pd.splitAmounts?.uzqr ?? (pd.selectedMethod === 'uzqr' ? paymentTotal : 0),
+                  uzqrPayId: pd.uzqr?.payId || '',
                   createdByRole: userRole,
                   createdByName: staff?.name,
                   guestCount: pd.guestCount,
@@ -1142,6 +1213,24 @@ function App() {
                   fiscalQueueId: fiscalIssued ? undefined : fiscalData?.queuedId,
                 }, ...prev])
                 bumpShiftStat(shiftKey, 'sales', paymentTotal)
+                // UzQR secondary sync like posvk_mobile: link the fiscal
+                // receipt to the paid invoice. Never blocks completion.
+                if (pd.uzqr?.payId && fiscalData?.qrCodeUrl) {
+                  const payId = pd.uzqr.payId
+                  const fiscalUrl = fiscalData.qrCodeUrl
+                  void (async () => {
+                    try {
+                      const { uzqrApi } = await import('./services/uzqrApi')
+                      const { getCompanyPointKey } = await import('./utils/companyInfo')
+                      await uzqrApi.sendReceipt({
+                        payId,
+                        terminalId: (dataStore.getItem('pos_v2_fm_terminal_id') || '').trim(),
+                        licenseKey: getCompanyPointKey().trim(),
+                        fiscalReceiptUrl: fiscalUrl,
+                      })
+                    } catch { /* secondary sync must not fail the sale */ }
+                  })()
+                }
                 setOrderItems([])
                 setOrderComment('')
                 setOrderTags([])
@@ -1149,6 +1238,7 @@ function App() {
               }
               setCashierPaymentData(null)
               setCpSplitAmounts(null)
+              setCpUzqrMeta(null)
               setMenuEntry(false)
               setCurrentScreen('tables')
               showToast(tr('Заказ завершен', 'Buyurtma yakunlandi', 'Order completed'))
@@ -1182,8 +1272,12 @@ function App() {
         return <AdminShift history={history} onShowShiftChecks={openShiftChecks} />
       case 'admin_support':
         return <AdminSupport />
+      case 'admin_usage':
+        return <AdminUsage history={history} />
+      case 'admin_salary':
+        return <AdminSalary shiftLog={shiftLog} />
       case 'fiscal_module':
-        return <FiscalModule />
+        return <FiscalModule onFmModuleChanged={(info) => setFmChange(info)} />
       case 'profile':
         const activeTableCount = tables.filter(t => t.status === 'ordered' || t.status === 'occupied' || t.status === 'payment_pending').length
         const networkBlocked = isNativeMobile()
@@ -1258,6 +1352,27 @@ function App() {
         {toast && (
           <div className="toast-overlay">
             <div className="toast-msg">{toast}</div>
+          </div>
+        )}
+        {fmChange && (
+          <div className="modal-overlay">
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="modal-title">{t('Подключён другой ФМ', 'Boshqa FM ulangan', 'Different FM connected')}</div>
+              {fmChange.unsent > 0 && (
+                <div className="modal-text">{t(`Неотправленных чеков: ${fmChange.unsent}`, `Yuborilmagan cheklar: ${fmChange.unsent}`, `Unsent receipts: ${fmChange.unsent}`)}</div>
+              )}
+              {fmChange.hasOpenShift && (
+                <div className="modal-text" style={{ marginTop: 8 }}>{t('Есть открытая смена на старом модуле', 'Eski modulda ochiq smena bor', 'There is an open shift on the old module')}</div>
+              )}
+              <div className="modal-text" style={{ marginTop: 8 }}>
+                {isNativeMobile()
+                  ? t('Подключитесь к кассе заново', 'Kassaga qayta ulaning', 'Reconnect to the cash register')
+                  : t('Войдите заново с новым модулем', 'Yangi modul bilan qayta kiring', 'Log in again with the new module')}
+              </div>
+              <div className="modal-actions">
+                <button className="modal-btn save" onClick={handleFmChangeConfirm}>{t('Понятно', 'Tushunarli', 'OK')}</button>
+              </div>
+            </div>
           </div>
         )}
       </Layout>

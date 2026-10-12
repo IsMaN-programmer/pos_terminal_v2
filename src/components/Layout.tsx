@@ -3,18 +3,8 @@ import { isNativeMobile } from '../services/capacitor'
 import { mobileConnection } from '../services/mobileConnection'
 import { getMobileSyncState, subscribeMobileSync } from '../services/dataStore'
 import type { Screen } from '../data/types'
-import { UpdateButton } from '../updater'
+import { UpdateButton, DesktopAutoUpdate } from '../updater'
 import { MobileUpdateButton, MobileUpdateModals, useMobileUpdate } from '../mobileUpdater'
-
-function MobileUpdateEntry() {
-  const { info, infoOpen, setInfoOpen, checking, openPanel } = useMobileUpdate()
-  return (
-    <>
-      <MobileUpdateButton hasUpdate={!!info} busy={checking} onClick={openPanel} />
-      <MobileUpdateModals info={info} infoOpen={infoOpen} onClose={() => setInfoOpen(false)} />
-    </>
-  )
-}
 import exitIcon from '../assets/icons/exit.png'
 import { useT } from '../i18n'
 import { useNetworkStore } from '../services/networkSocket'
@@ -32,6 +22,8 @@ import featuresIcon from '../assets/icons/features.png'
 import naturalIcon from '../assets/icons/natural.png'
 import settingsIcon from '../assets/icons/settings.png'
 import supportIcon from '../assets/icons/support.png'
+import xisobotIcon from '../assets/icons/xisobot.png'
+import salaryIcon from '../assets/icons/salary.png'
 
 interface LayoutProps {
   currentScreen: Screen
@@ -75,6 +67,8 @@ export default function Layout({ currentScreen, onNavigate, staffName, onLogout:
     admin_branches: t('Филиалы', 'Filiallar', 'Branches'),
     admin_settings: t('Настройки', 'Sozlamalar', 'Settings'),
     admin_support: t('Помощь', 'Yordam', 'Help'),
+    admin_usage: t('Расходы', 'Xisobot', 'Usage'),
+    admin_salary: t('Зарплаты', 'Maoshlar', 'Salaries'),
   }
 
   const WAITER_NAV_ITEMS: { screen: Screen; icon: ReactNode; label: string }[] = [
@@ -102,12 +96,17 @@ export default function Layout({ currentScreen, onNavigate, staffName, onLogout:
     { screen: 'admin_reports', icon: <img src={billIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_reports },
     { screen: 'admin_shift', icon: <img src={shiftIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_shift },
     { screen: 'admin_roles', icon: <img src={userIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_roles },
+    { screen: 'admin_usage', icon: <img src={xisobotIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_usage },
+    { screen: 'admin_salary', icon: <img src={salaryIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_salary },
     { screen: 'admin_branches', icon: <img src={locationIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_branches },
     { screen: 'admin_settings', icon: <img src={settingsIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_settings },
     { screen: 'admin_support', icon: <img src={supportIcon} alt="" className="sidebar-nav-img" />, label: LABEL.admin_support },
   ]
 
   const navItems = role === 'admin' ? ADMIN_NAV_ITEMS : role === 'cashier' ? CASHIER_NAV_ITEMS : WAITER_NAV_ITEMS
+  // Update checks run for every role (waiters/cashiers included): the modal
+  // is global, the sidebar button stays admin-only.
+  const mu = useMobileUpdate()
   return (
     <div className={`layout${blocked ? ' mobile-connection-blocked' : ''}`}>
       <aside className="sidebar" inert={blocked ? true : undefined}>
@@ -123,7 +122,7 @@ export default function Layout({ currentScreen, onNavigate, staffName, onLogout:
               <span className="sidebar-label">{item.label}</span>
             </button>
           ))}
-          {role === 'admin' && (isNativeMobile() ? <MobileUpdateEntry /> : <UpdateButton />)}
+          {role === 'admin' && (isNativeMobile() ? <MobileUpdateButton hasUpdate={!!mu.info} busy={mu.checking} onClick={mu.openPanel} /> : <UpdateButton />)}
           {role !== 'waiter' && (
             <button
               className="sidebar-btn sidebar-exit-btn"
@@ -166,6 +165,8 @@ export default function Layout({ currentScreen, onNavigate, staffName, onLogout:
         {mobile && !!mobileConnection().host && sync.error && <div role="alert" className="pin-error" style={{ padding: 12 }}>{sync.error}</div>}
         <div className="mobile-content-shell" inert={blocked ? true : undefined}>{children}</div>
       </main>
+      <DesktopAutoUpdate />
+      <MobileUpdateModals info={mu.info} infoOpen={mu.infoOpen} onClose={() => mu.setInfoOpen(false)} />
     </div>
   )
 }

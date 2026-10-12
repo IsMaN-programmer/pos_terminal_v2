@@ -54,22 +54,24 @@ interface CheckReceiptProps {
   discountType: 'percent' | 'amount'
   discountPercent: number
   discountAmount: number
-  selectedMethod: 'cash' | 'card' | 'click' | null
-  splitAmounts?: { cash: number; card: number; click: number } | null
+  selectedMethod: 'cash' | 'card' | 'uzqr' | null
+  splitAmounts?: { cash: number; card: number; uzqr: number } | null
+  uzqr?: { payId?: string; invoiceId?: string }
   onBack: () => void
   onComplete: (fiscalData?: FiscalData) => void
 }
 
 export default function CheckReceipt({
   items, tableName, guestCount, staffName, staffId, userRole, shiftNumber = '001', servicePercent,
-  discountType, discountPercent, discountAmount, selectedMethod, splitAmounts,
+  discountType, discountPercent, discountAmount, selectedMethod, splitAmounts, uzqr,
   onBack, onComplete,
 }: CheckReceiptProps) {
   const t = useT()
   const methodLabel: Record<string, string> = {
     cash: t('Наличной', 'Naqd', 'Cash'),
     card: t('Карта', 'Karta', 'Card'),
-    click: t('Другое', 'Boshqa', 'Other'),
+    click: 'UzQR',
+    uzqr: 'UzQR',
   }
   const ROLE_LABELS: Record<string, string> = { waiter: t('Официант', 'Ofitsiant', 'Waiter'), cashier: t('Кассир', 'Kassir', 'Cashier'), admin: t('Администратор', 'Administrator', 'Administrator') }
   const [fiscalOrderNum, setFiscalOrderNum] = useState(0)
@@ -320,7 +322,8 @@ export default function CheckReceipt({
       return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
     }
     const receivedCash = Math.round((splitAmounts?.cash ?? (selectedMethod === 'cash' ? итого : 0)) * 100)
-    const receivedCard = Math.round((splitAmounts ? splitAmounts.card + splitAmounts.click : selectedMethod === 'cash' ? 0 : итого) * 100)
+    // Fiscal protocol knows only cash/card: UzQR folds into the card sum.
+    const receivedCard = Math.round((splitAmounts ? splitAmounts.card + splitAmounts.uzqr : selectedMethod === 'cash' ? 0 : итого) * 100)
     return {
       Time: fdNow(),
       ReceivedCash: receivedCash,
@@ -654,9 +657,9 @@ export default function CheckReceipt({
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
                           <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                         </svg>
-                        {t('Другое', 'Boshqa', 'Other')}
+                        UzQR
                       </span>
-                      <span style={{ fontWeight: 700 }}>{splitAmounts.click.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span>
+                      <span style={{ fontWeight: 700 }}>{splitAmounts.uzqr.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span>
                     </div>
                   </div>
                 ) : (
@@ -673,7 +676,7 @@ export default function CheckReceipt({
                           <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                         </svg>
                       )}
-                      {selectedMethod === 'click' && (
+                      {selectedMethod === 'uzqr' && (
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" strokeWidth="1.5">
                           <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                         </svg>
@@ -682,6 +685,12 @@ export default function CheckReceipt({
                         {selectedMethod ? methodLabel[selectedMethod] : t('Не выбран', 'Tanlanmagan', 'Not selected')}
                       </span>
                     </div>
+                  </div>
+                )}
+                {uzqr?.payId && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 0' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>UzQR ID</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#333' }}>{uzqr.payId}</span>
                   </div>
                 )}
 

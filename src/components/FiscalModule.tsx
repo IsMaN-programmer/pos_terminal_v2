@@ -6,6 +6,8 @@ import { onFiscalUsbChange } from '../services/fiscalNative'
 import { tr, useT, locale } from '../i18n'
 import { buildCabinetReceiptPayload, queueCabinetReceipt, sendCabinetReceipt } from '../services/receiptSync'
 import { isNativeMobile } from '../services/capacitor'
+import { fmUserMessage } from '../utils/fmErrors'
+import { checkFmChanged, type FmChangeInfo } from '../services/fmGuard'
 import usbIcon from '../assets/icons/usb.png'
 
 const FM_LIST_KEY = 'pos_v2_fm_list'
@@ -152,7 +154,7 @@ function saveShiftInfo(v: ShiftInfo | null) {
   else dataStore.removeItem(SHIFT_INFO_KEY)
 }
 
-export default function FiscalModule() {
+export default function FiscalModule({ onFmModuleChanged }: { onFmModuleChanged?: (info: FmChangeInfo) => void }) {
   const netState = useNetworkStore()
   const networkBlocked = !isNativeMobile() && netState.role === 'neutral'
   const [devices, setDevices] = useState<FMDevice[]>(() => {
@@ -300,10 +302,19 @@ export default function FiscalModule() {
       showToast(tr('Смена открыта', 'Smena ochiq', 'Shift is open'))
       await fetchShiftInfo(factoryId)
     } catch (e: any) {
-      setError(tr(`Не удалось открыть смену: ${e.message || 'ошибка'}`, `Smenani ochishning imkoni bo\'lmadi: ${e.message || 'xato'}`))
+      const friendly = fmUserMessage(e)
+      const raw = e?.message || 'ошибка'
+      setError(friendly
+        ? tr(`Не удалось открыть смену: ${friendly}`, `Smenani ochishning imkoni bo\'lmadi: ${friendly}`, `Failed to open shift: ${friendly}`)
+        : tr(`Не удалось открыть смену: ${raw}`, `Smenani ochishning imkoni bo\'lmadi: ${raw}`, `Failed to open shift: ${raw}`))
+      // A 6A82-style failure usually means a different module is attached —
+      // re-verify the binding so the guard dialog + logout can take over.
+      if (friendly) {
+        void checkFmChanged().then(info => { if (info) onFmModuleChanged?.(info) })
+      }
     }
     setLoading(false)
-  }, [factoryId, fetchShiftInfo, showToast, networkBlocked])
+  }, [factoryId, fetchShiftInfo, showToast, networkBlocked, onFmModuleChanged])
 
   const closeShift = useCallback(async () => {
     if (!factoryId) { showToast(tr('Фискальный модуль не найден', 'Fiskal modul topilmadi', 'Fiscal module not found')); return }

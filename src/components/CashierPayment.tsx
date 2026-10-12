@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react'
 import type { OrderItem } from '../data/types'
 import { useT, tr, locale } from '../i18n'
+import UzQrDialog from './UzQrDialog'
 
 export interface CashierPaymentData {
   items: OrderItem[]
@@ -10,8 +11,9 @@ export interface CashierPaymentData {
   discountType: 'percent' | 'amount'
   discountPercent: number
   discountAmount: number
-  selectedMethod: 'cash' | 'card' | 'click' | null
-  splitAmounts?: { cash: number; card: number; click: number }
+  selectedMethod: 'cash' | 'card' | 'uzqr' | null
+  splitAmounts?: { cash: number; card: number; uzqr: number }
+  uzqr?: { payId?: string; invoiceId?: string }
 }
 
 interface CashierPaymentProps {
@@ -25,14 +27,16 @@ interface CashierPaymentProps {
   discountType: 'percent' | 'amount'
   discountPercent: number
   discountAmount: number
-  selectedMethod: 'cash' | 'card' | 'click' | null
+  selectedMethod: 'cash' | 'card' | 'uzqr' | null
   onServicePercentChange: (v: number) => void
   onDiscountTypeChange: (v: 'percent' | 'amount') => void
   onDiscountPercentChange: (v: number) => void
   onDiscountAmountChange: (v: number) => void
-  onSelectedMethodChange: (v: 'cash' | 'card' | 'click' | null) => void
-  splitAmounts: { cash: number; card: number; click: number } | null
-  onSplitAmountsChange: (v: { cash: number; card: number; click: number } | null) => void
+  onSelectedMethodChange: (v: 'cash' | 'card' | 'uzqr' | null) => void
+  splitAmounts: { cash: number; card: number; uzqr: number } | null
+  onSplitAmountsChange: (v: { cash: number; card: number; uzqr: number } | null) => void
+  uzqrMeta: { payId?: string; invoiceId?: string } | null
+  onUzqrMetaChange: (v: { payId?: string; invoiceId?: string } | null) => void
 }
 
 type ActiveModal = 'discount' | 'promo' | 'service' | 'split' | null
@@ -41,7 +45,7 @@ export default function CashierPayment({
   totalSum, tableName, guestCount, onBack, items, onContinue,
   servicePercent, discountType, discountPercent, discountAmount, selectedMethod,
   onServicePercentChange, onDiscountTypeChange, onDiscountPercentChange, onDiscountAmountChange, onSelectedMethodChange,
-  splitAmounts, onSplitAmountsChange,
+  splitAmounts, onSplitAmountsChange, uzqrMeta, onUzqrMetaChange,
 }: CashierPaymentProps) {
   const [activeModal, setActiveModal] = useState<ActiveModal>(null)
   const [tempDiscountType, setTempDiscountType] = useState<'percent' | 'amount'>('percent')
@@ -52,9 +56,10 @@ export default function CashierPayment({
   const [promoError, setPromoError] = useState(false)
   const [tempSplitCash, setTempSplitCash] = useState(0)
   const [tempSplitCard, setTempSplitCard] = useState(0)
-  const [tempSplitClick, setTempSplitClick] = useState(0)
+  const [tempSplitUzqr, setTempSplitUzqr] = useState(0)
   const [splitError, setSplitError] = useState('')
   const [toast, setToast] = useState<string | null>(null)
+  const [uzqrOpen, setUzQrOpen] = useState(false)
 
   const t = useT()
 
@@ -85,7 +90,7 @@ export default function CashierPayment({
     if (type === 'split') {
       setTempSplitCash(splitAmounts?.cash ?? 0)
       setTempSplitCard(splitAmounts?.card ?? 0)
-      setTempSplitClick(splitAmounts?.click ?? 0)
+      setTempSplitUzqr(splitAmounts?.uzqr ?? 0)
       setSplitError('')
     }
     setActiveModal(type)
@@ -95,6 +100,9 @@ export default function CashierPayment({
     onDiscountTypeChange(tempDiscountType)
     onDiscountPercentChange(tempDiscountPercent)
     onDiscountAmountChange(tempDiscountAmount)
+    // UzQR invoice is issued for an exact total — re-scan after any change.
+    onUzqrMetaChange(null)
+    if (selectedMethod === 'uzqr') onSelectedMethodChange(null)
     setActiveModal(null)
   }
 
@@ -103,6 +111,8 @@ export default function CashierPayment({
       onDiscountTypeChange('percent')
       onDiscountPercentChange(10)
       onDiscountAmountChange(0)
+      onUzqrMetaChange(null)
+      if (selectedMethod === 'uzqr') onSelectedMethodChange(null)
       setActiveModal(null)
       setPromoError(false)
       showToast(tr('Промокод успешно добавлен', 'Promokod muvaffaqiyatli qo\'shildi', 'Promo code successfully added'))
@@ -113,22 +123,30 @@ export default function CashierPayment({
 
   function applyService() {
     onServicePercentChange(tempServicePercent)
+    onUzqrMetaChange(null)
+    if (selectedMethod === 'uzqr') onSelectedMethodChange(null)
     setActiveModal(null)
   }
 
   function applySplit() {
-    const total = tempSplitCash + tempSplitCard + tempSplitClick
+    const total = tempSplitCash + tempSplitCard + tempSplitUzqr
     if (total !== итого) {
       setSplitError(tr(`Общая сумма разделения (${total.toLocaleString()} сум) не равна итого (${итого.toLocaleString()} сум)`, `Bo'lish summasi (${total.toLocaleString()} so'm) jami (${итого.toLocaleString()} so'm)ga teng emas`))
       return
     }
-    onSplitAmountsChange({ cash: tempSplitCash, card: tempSplitCard, click: tempSplitClick })
+    onSplitAmountsChange({ cash: tempSplitCash, card: tempSplitCard, uzqr: tempSplitUzqr })
     onSelectedMethodChange(null)
+    onUzqrMetaChange(null)
     setActiveModal(null)
   }
 
   function clearSplit() {
     onSplitAmountsChange(null)
+  }
+
+  function pickMethod(method: 'cash' | 'card') {
+    onUzqrMetaChange(null)
+    onSelectedMethodChange(method)
   }
 
   return (
@@ -149,6 +167,7 @@ export default function CashierPayment({
             items, tableName, guestCount, servicePercent,
             discountType, discountPercent, discountAmount, selectedMethod,
             splitAmounts: splitAmounts || undefined,
+            uzqr: uzqrMeta || undefined,
           })}>{t('Продолжить', 'Davom etish', 'Continue')}</button>
         </div>
       </div>
@@ -254,29 +273,30 @@ export default function CashierPayment({
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
-                  <span className="pm-label">{t('Другое', 'Boshqa', 'Other')}</span>
-                  <span className="pm-amount">{splitAmounts.click.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span>
+                  <span className="pm-label">UzQR</span>
+                  <span className="pm-amount">{splitAmounts.uzqr.toLocaleString()} {t('сум', 'so\'m', 'sum')}</span>
                 </div>
               </>
             ) : (
               <>
-                <div className={`payment-method-box${selectedMethod === 'cash' ? ' selected' : ''}`} onClick={() => onSelectedMethodChange('cash')}>
+                <div className={`payment-method-box${selectedMethod === 'cash' ? ' selected' : ''}`} onClick={() => pickMethod('cash')}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="2" y="6" width="20" height="12" rx="2" /><circle cx="12" cy="12" r="3" />
                   </svg>
                   <span className="pm-label">{t('Наличной', 'Naqd', 'Cash')}</span>
                 </div>
-                <div className={`payment-method-box${selectedMethod === 'card' ? ' selected' : ''}`} onClick={() => onSelectedMethodChange('card')}>
+                <div className={`payment-method-box${selectedMethod === 'card' ? ' selected' : ''}`} onClick={() => pickMethod('card')}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="1" y="4" width="22" height="16" rx="2" /><line x1="1" y1="10" x2="23" y2="10" />
                   </svg>
                   <span className="pm-label">{t('Карта', 'Karta', 'Card')}</span>
                 </div>
-                <div className={`payment-method-box${selectedMethod === 'click' ? ' selected' : ''}`} onClick={() => onSelectedMethodChange('click')}>
+                <div className={`payment-method-box${selectedMethod === 'uzqr' ? ' selected' : ''}`} onClick={() => setUzQrOpen(true)}>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                   </svg>
-                  <span className="pm-label">{t('Другое', 'Boshqa', 'Other')}</span>
+                  <span className="pm-label">UzQR</span>
+                  {uzqrMeta?.payId && <span className="pm-amount">✓</span>}
                 </div>
               </>
             )}
@@ -346,12 +366,12 @@ export default function CashierPayment({
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" />
                 </svg>
-                {t('Другое', 'Boshqa', 'Other')}
+                UzQR
               </label>
-              <input type="number" className="modal-input" placeholder="0" value={tempSplitClick || ''} onChange={e => { setTempSplitClick(Number(e.target.value) || 0); setSplitError('') }} />
+              <input type="number" className="modal-input" placeholder="0" value={tempSplitUzqr || ''} onChange={e => { setTempSplitUzqr(Number(e.target.value) || 0); setSplitError('') }} />
             </div>
             <div className="split-total-info">
-              {t('Итого:', 'Jami:', 'Total:')} {(tempSplitCash + tempSplitCard + tempSplitClick).toLocaleString()} / {итого.toLocaleString()} {t('сум', 'so\'m', 'sum')}
+              {t('Итого:', 'Jami:', 'Total:')} {(tempSplitCash + tempSplitCard + tempSplitUzqr).toLocaleString()} / {итого.toLocaleString()} {t('сум', 'so\'m', 'sum')}
             </div>
             {splitError && <div className="promo-error">{splitError}</div>}
             <div className="modal-actions">
@@ -379,6 +399,18 @@ export default function CashierPayment({
         <div className="toast-overlay">
           <div className="toast-msg">{toast}</div>
         </div>
+      )}
+
+      {uzqrOpen && (
+        <UzQrDialog
+          amount={итого}
+          onSuccess={(meta) => {
+            onUzqrMetaChange(meta)
+            onSelectedMethodChange('uzqr')
+            setUzQrOpen(false)
+          }}
+          onCancel={() => setUzQrOpen(false)}
+        />
       )}
     </div>
   )

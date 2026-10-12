@@ -40,10 +40,11 @@ export function useMobileUpdate() {
     }
   }, [])
 
-  // Background check shortly after login, like the desktop updater.
+  // Background check shortly after login for every role: when an update
+  // is found the modal opens by itself (waiters have no sidebar button).
   useEffect(() => {
     if (!isNativeMobile()) return
-    const timer = setTimeout(() => { void check(false) }, 4000)
+    const timer = setTimeout(() => { void check(true) }, 4000)
     return () => clearTimeout(timer)
   }, [check])
 
@@ -133,6 +134,9 @@ export function MobileUpdateModals({
           <div className="login-logo-bg" />
           <div className="login-logo-ring" />
           <div className="login-logo-ring-2" />
+          <div className="login-logo-icon">
+            <img src="/logo.png" alt="logo" />
+          </div>
         </div>
         <div className="updater-line" />
         {!info && (

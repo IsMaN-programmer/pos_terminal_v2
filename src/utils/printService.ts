@@ -157,7 +157,7 @@ export function formatFiscalReceipt(data: {
   items: Array<{ name: string; quantity: number; unitPrice: number; total: number; mxik: string; markCodes?: string[] }>
   totalSum: number; serviceAmount: number; servicePercent: number
   discountValue: number; qqsAmount: number; итого: number
-  selectedMethod: string; splitAmounts?: { cash: number; card: number; click: number } | null
+  selectedMethod: string; splitAmounts?: { cash: number; card: number; uzqr: number } | null
   fmTerminalId: string; fiscalSign?: string; qrCodeUrl?: string; shiftNumber: string
 }, paperSize: string): string {
   const W = width(paperSize)
@@ -200,7 +200,7 @@ export function formatFiscalReceipt(data: {
     r.push(sep('-', W))
     if (data.splitAmounts.cash > 0) r.push(lr(tr('Наличной', 'Naqd', 'Cash'), data.splitAmounts.cash.toLocaleString() + ' ' + tr('сум', 'so\'m', 'sum'), W))
     if (data.splitAmounts.card > 0) r.push(lr(tr('Карта', 'Karta', 'Card'), data.splitAmounts.card.toLocaleString() + ' ' + tr('сум', 'so\'m', 'sum'), W))
-    if (data.splitAmounts.click > 0) r.push(lr(tr('Другое', 'Boshqa', 'Other'), data.splitAmounts.click.toLocaleString() + ' ' + tr('сум', 'so\'m', 'sum'), W))
+    if (data.splitAmounts.uzqr > 0) r.push(lr('UzQR', data.splitAmounts.uzqr.toLocaleString() + ' ' + tr('сум', 'so\'m', 'sum'), W))
   } else {
     r.push(lr(tr('Выбор оплаты', 'To\'lov usuli', 'Select payment'), data.selectedMethod, W))
   }

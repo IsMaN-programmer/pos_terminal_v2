@@ -43,6 +43,10 @@ export function getCompanyEmployee(): string {
   return dataStore.getItem('pos_v2_company_employee') || '';
 }
 
+export function getCompanyPointKey(): string {
+  return dataStore.getItem('pos_v2_company_point_key') || '';
+}
+
 export function isCompanyApiSynced(): boolean {
   return dataStore.getItem('pos_v2_company_api_synced') === '1';
 }
@@ -79,6 +83,7 @@ export async function syncCompanyDataFromCabinet(): Promise<CompanyInfo> {
   const cashId = c.cashId != null ? String(c.cashId) : ''
   const rawCabinetUserId = details.user?.id ?? c.userId
   const cabinetUserId = rawCabinetUserId != null ? String(rawCabinetUserId) : ''
+  const pointKey = c.pointKey?.trim() || ''
 
   if (name) dataStore.setItem('pos_v2_company_name', name)
   if (tin) {
@@ -89,6 +94,7 @@ export async function syncCompanyDataFromCabinet(): Promise<CompanyInfo> {
   if (companyId) dataStore.setItem('pos_v2_cabinet_company_id', companyId)
   if (cashId) dataStore.setItem('pos_v2_cabinet_cash_id', cashId)
   if (cabinetUserId) dataStore.setItem('pos_v2_cabinet_user_id', cabinetUserId)
+  if (pointKey) dataStore.setItem('pos_v2_company_point_key', pointKey)
 
   setCompanyApiSynced(true)
 

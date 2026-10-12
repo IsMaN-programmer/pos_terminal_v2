@@ -104,14 +104,16 @@ function checksForShift(shift: SyncableShiftLogEntry, history: HistoryEntry[]): 
 
 function paymentParts(entry: HistoryEntry): { cash: number; card: number } {
   const total = paidTotal(entry)
-  if (entry.cashPaymentSum != null || entry.cardPaymentSum != null) {
+  // Cabinet shift payload only knows cash/card: UzQR folds into card,
+  // same as the fiscal receipt (FullReceipt slots 0x01/0x02).
+  const uzqr = Math.max(0, numberValue(entry.uzqrPaymentSum))
+  if (entry.cashPaymentSum != null || entry.cardPaymentSum != null || entry.uzqrPaymentSum != null) {
     return {
       cash: Math.max(0, numberValue(entry.cashPaymentSum)),
-      card: Math.max(0, numberValue(entry.cardPaymentSum)),
+      card: Math.max(0, numberValue(entry.cardPaymentSum)) + uzqr,
     }
   }
   if (entry.paymentMethod === 'cash') return { cash: total, card: 0 }
-  if (entry.paymentMethod === 'card' || entry.paymentMethod === 'click') return { cash: 0, card: total }
   return { cash: 0, card: total }
 }
 

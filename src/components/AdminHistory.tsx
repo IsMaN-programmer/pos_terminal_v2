@@ -426,7 +426,7 @@ export default function AdminHistory({ history: allHistory = [] }: AdminHistoryP
                     <span className="hp-value">
                       {activeEntry.paymentMethod === 'cash' ? t('Наличной', 'Naqd', 'Cash')
                         : activeEntry.paymentMethod === 'card' ? t('Карта', 'Karta', 'Card')
-                        : activeEntry.paymentMethod === 'click' ? t('Другое', 'Boshqa', 'Other')
+                        : activeEntry.paymentMethod === 'click' || activeEntry.paymentMethod === 'uzqr' ? 'UzQR'
                         : activeEntry.paymentMethod === 'split' ? t('Разделение', 'Bo\'lish', 'Split')
                         : t('—', '—', '—')}
                     </span>
