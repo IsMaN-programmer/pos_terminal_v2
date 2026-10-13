@@ -151,20 +151,20 @@ export default function AdminUsage({ history = [] }: { history?: HistoryEntry[] 
           <thead>
             <tr>
               <th style={{ width: '6%' }}>№</th>
-              <th style={{ width: '40%' }}>{t('Товар / Блюдо', 'Mahsulot / Taom', 'Product / Dish')}</th>
-              <th style={{ width: '16%' }}>{t('Продано', 'Sotilgan', 'Sold')}</th>
-              <th style={{ width: '19%' }}>{t('Выручка', 'Tushum', 'Revenue')}</th>
-              <th style={{ width: '19%' }}>{t('Осталось', 'Qoldi', 'Left')}</th>
+              <th style={{ width: '40%', textAlign: 'left', paddingLeft: 12 }}>{t('Товар / Блюдо', 'Mahsulot / Taom', 'Product / Dish')}</th>
+              <th style={{ width: '16%', textAlign: 'center' }}>{t('Продано', 'Sotilgan', 'Sold')}</th>
+              <th style={{ width: '19%', textAlign: 'center' }}>{t('Выручка', 'Tushum', 'Revenue')}</th>
+              <th style={{ width: '19%', textAlign: 'center' }}>{t('Осталось', 'Qoldi', 'Left')}</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((r, idx) => (
               <tr key={r.name}>
-                <td>{idx + 1}</td>
-                <td className="ab-table-name">{r.name}</td>
-                <td>{r.sold.toLocaleString()}</td>
-                <td>{r.revenue.toLocaleString()}</td>
-                <td>{r.stock == null ? '—' : r.stock.toLocaleString()}</td>
+                <td style={{ fontWeight: 700, color: '#64748b' }}>{idx + 1}</td>
+                <td className="ab-table-name" style={{ textAlign: 'left', paddingLeft: 12 }}>{r.name}</td>
+                <td style={{ textAlign: 'center' }}>{r.sold.toLocaleString()}</td>
+                <td style={{ textAlign: 'center' }}>{r.revenue.toLocaleString()}</td>
+                <td style={{ textAlign: 'center' }}>{r.stock == null ? '—' : r.stock.toLocaleString()}</td>
               </tr>
             ))}
             {filtered.length === 0 && (
